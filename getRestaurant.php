@@ -1,6 +1,6 @@
 <?php 
 include("dbConfiguration.php");
-$sql = "SELECT * FROM `RestaurantMaster` where `IsActive` = 1 order by `DisplayOrder`";
+$sql = "SELECT * FROM `RestaurantMaster` where `IsActive`=1 and `Enable`=1 order by `DisplayOrder`";
 $result = mysqli_query($conn,$sql);
 $restList = array();
 while($row=mysqli_fetch_assoc($result)){

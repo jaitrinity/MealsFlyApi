@@ -82,9 +82,11 @@ else if($insertType == "moreItem"){
 		$id = $itemObj->id;
 		$catId = $itemObj->catId;
 		$image = $itemObj->image;
-		$t=time()*$i;
-		$base64 = new Base64ToAny();
-		$image = $base64->base64_to_jpeg($image,$t.'_Image');
+		if($image != ""){
+			$t=time()*$i;
+			$base64 = new Base64ToAny();
+			$image = $base64->base64_to_jpeg($image,$t.'_Image');
+		}
 		$name = $itemObj->name;
 		$customize = $itemObj->customize;
 		$unitList = $itemObj->unitList;

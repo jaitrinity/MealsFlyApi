@@ -5,19 +5,10 @@ if($methodType != "POST"){
 	return;
 }
 $json = file_get_contents('php://input');
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/log_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
 $jsonData = json_decode($json);
 
 $restId = $jsonData->restId;
 $custId = $jsonData->custId;
-
-$orSql = "SELECT * from(SELECT TIMESTAMPDIFF(SECOND,`OrderDatetime`, CURRENT_TIMESTAMP) as SecondDiff FROM `MyOrders` where `RestId`=$restId and `CustId`=$custId order by `OrderDatetime` desc LIMIT 0,1) t where t.SecondDiff < 15";
-$orQuery=mysqli_query($conn,$orSql);
-$orRowCount=mysqli_num_rows($orQuery);
-if($orRowCount != 0){
-	return;
-}
-
 $custAddId = $jsonData->custAddId;
 $totalPrice = $jsonData->totalPrice;
 $deliveryCharge = $jsonData->deliveryCharge;

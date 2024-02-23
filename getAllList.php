@@ -135,10 +135,12 @@ else if($searchType == "partnerReport"){
 		$orderId = $row["OrderId"];
 		$restName = $row["RestName"];
 		$commission = $row["Commission"];
+		// $commission = 77;
 		$grandTotal = $row["GrandTotal"];
 		$subTotal = $row["TotalPrice"];
 		$status = $row["Status"];
 		$calPayableAmount = ($subTotal * $commission)/100;
+		$calPayableAmount = round($calPayableAmount);
 		$payableAmount = $row["PayableAmount"] == null ? "" : $row["PayableAmount"];
 		$paymentStatus = "Pending";
 		if($payableAmount != ""){
@@ -364,7 +366,7 @@ else if($searchType == "menuList"){
 }
 else if($searchType == "allCategory"){
 	$restId = $jsonData->restId;
-	$sql = "SELECT * FROM `CategoryMaster` where `RestId` = $restId";
+	$sql = "SELECT * FROM `CategoryMaster` where `RestId` = $restId and `IsActive` = 1";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -519,7 +521,7 @@ else if($searchType == "orders"){
 		$filterSql .= "and date_format(`OrderDatetime`,'%Y-%m-%d') <= '$filterEndDate'";
 	}
 
-	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where 1=1 $filterSql order by mo.OrderId desc";
+	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -563,6 +565,20 @@ else if($searchType == "orderItem"){
 		array_push($orderItemList, $orderItemJson);
 	}
 	echo json_encode($orderItemList);
+}
+else if($searchType == "customer"){
+	$sql = "SELECT `Name` as custName, `Mobile` as `mobile`, date_format(`CreateDate`,'%d-%b-%Y') as `registerDate` FROM `CustomerMaster` where `IsActive`=1 order by `CustId` desc";
+	$stmt = $conn->prepare($sql);
+	$stmt->execute();
+	$query = $stmt->get_result();
+	$customerList = array();
+	$srNo=0;
+	while($row = mysqli_fetch_assoc($query)){
+		$srNo++;
+		$row["srNo"] = strval($srNo);
+		array_push($customerList, $row);
+	}
+	echo json_encode($customerList);
 }
 ?>
 

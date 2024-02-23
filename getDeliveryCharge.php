@@ -12,7 +12,7 @@ $api_key = "AIzaSyDkCjzv4fVu7wlsp31Tu0AnpbyQaxm4Kz8";
 $custAddId = $jsonData->custAddId;
 $restId = $jsonData->restId;
 
-$sql = "SELECT * FROM `Distance` where `CustAddId`=? and `RestId`=? ";
+$sql = "SELECT * FROM `Distance` where `CustAddId`=? and `RestId`=? and `IsDeleted`=0 ";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("ii",$custAddId, $restId);
 $stmt->execute();

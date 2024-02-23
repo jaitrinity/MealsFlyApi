@@ -2,8 +2,8 @@
 include("dbConfiguration.php");
 require 'SendMailClass.php';
 
-$toMailId = "ordersalertmealsfly@gmail.com";
-// $toMailId = "jai.prakash@trinityapplab.co.in";
+// $toMailId = "ordersalertmealsfly@gmail.com";
+$toMailId = "jai.prakash@trinityapplab.co.in";
 // $ccMailId = "pushkar.tyagi@trinityapplab.co.in";
 $ccMailId = "";
 $bccMailId = "";
@@ -54,11 +54,12 @@ while($row1 = mysqli_fetch_assoc($query1)){
 	}
 	$msg1 .= "</tbody></table> <br><br>";
 }
-$msg1 .= $regard;
-$subject1 = "Order not accepted by restaurant";
-$classObj1 = new SendMailClass();
-$response1 .= $classObj1->sendMail($toMailId, $ccMailId, $bccMailId, $subject1, $msg1, null);
-
+if(mysqli_num_rows($query1) !=0 ){
+	$msg1 .= $regard;
+	$subject1 = "Order not accepted by restaurant";
+	$classObj1 = new SendMailClass();
+	$response1 .= $classObj1->sendMail($toMailId, $ccMailId, $bccMailId, $subject1, $msg1, null);
+}
 
 // Order not pickup order by rider till 20 minute
 $sql2 = "SELECT t.OrderId, rm.Name as RestName, ca.Name as CustName, t.OrderDatetime, dm.Name as RiderName, dm.Mobile as RiderMobile from( SELECT *, TIMESTAMPDIFF(Minute,`ReadyDatetime`,CURRENT_TIMESTAMP) as `MinuteDiff` FROM `MyOrders` where `Status` = 3) t join RestaurantMaster rm on t.RestId = rm.RestId join CustomerAddress ca on t.CustAddId = ca.CustAddId join DeliveryBoyMaster dm on t.RiderId = dm.RiderId where t.MinuteDiff > 20";
@@ -106,10 +107,14 @@ while($row2 = mysqli_fetch_assoc($query2)){
 	}
 	$msg2 .= "</tbody></table> <br>";
 }
-$msg2 .= $regard;
-$subject2 = "Order not pick-up by rider.";
-$classObj2 = new SendMailClass();
-$response2 .= $classObj2->sendMail($toMailId, $ccMailId, $bccMailId, $subject2, $msg2, null);
+
+if(mysqli_num_rows($query2) !=0 ){
+	$msg2 .= $regard;
+	$subject2 = "Order not pick-up by rider.";
+	$classObj2 = new SendMailClass();
+	$response2 .= $classObj2->sendMail($toMailId, $ccMailId, $bccMailId, $subject2, $msg2, null);
+}
+
 
 // Rider not allocated to order
 $sql3="SELECT mo.OrderId, ca.Name as CustName, ca.Contact as CustContact, mo.OrderDatetime FROM MyOrders mo join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.Status = 2 and mo.OrderAcceptDatetime is null";
@@ -155,11 +160,13 @@ while($row3 = mysqli_fetch_assoc($query3)){
 	}
 	$msg3 .= "</tbody></table> <br>";
 }
-$msg3 .= $regard;
-$subject3 = "Order not allocated to rider";
-$classObj3 = new SendMailClass();
-$response3 .= $classObj3->sendMail($toMailId, $ccMailId, $bccMailId, $subject3, $msg3, null);
 
+if(mysqli_num_rows($query3) !=0 ){
+	$msg3 .= $regard;
+	$subject3 = "Order not allocated to rider";
+	$classObj3 = new SendMailClass();
+	$response3 .= $classObj3->sendMail($toMailId, $ccMailId, $bccMailId, $subject3, $msg3, null);
+}
 
 header('Content-Type: text/html');
 echo $msg1.'<br>'.$msg2.'<br>'.$msg3;

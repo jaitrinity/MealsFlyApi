@@ -81,7 +81,7 @@ else if($updateType == "complaintStatus"){
 else if($updateType == "updateRestPriority"){
 	$restId = $jsonData->restId;
 	$priority = $jsonData->priority;
-	$sql = "UPDATE `RestaurantMaster` set `DisplayOrder` = '$priority' where `RestId` = $restId";
+	$sql = "UPDATE `RestaurantMaster` set `DisplayOrder`='$priority', `UpdateDate`=current_timestamp where `RestId` = $restId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";
@@ -233,7 +233,7 @@ else if($updateType == "editRestaurant"){
 	}
 
 	$restId = $jsonData->restId;
-	$sql = "UPDATE `RestaurantMaster` set `Name`='$name', `Mobile`='$mobile', `Address`='$address', `Pincode`='$pincode', `LatLong`='$latlong', `DisplayOrder`='$displayOrder', `OpenTime`='$openTime', `CloseTime`='$closeTime' $moreUpdate where `RestId` = $restId";
+	$sql = "UPDATE `RestaurantMaster` set `Name`='$name', `Mobile`='$mobile', `Address`='$address', `Pincode`='$pincode', `LatLong`='$latlong', `DisplayOrder`='$displayOrder', `OpenTime`='$openTime', `CloseTime`='$closeTime', `UpdateDate`=current_timestamp $moreUpdate where `RestId` = $restId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";
@@ -253,7 +253,11 @@ else if($updateType == "editRestaurant"){
 else if($updateType == "appRejRest"){
 	$restId = $jsonData->restId;
 	$action = $jsonData->action;
-	$sql = "UPDATE `RestaurantMaster` set `Approve` = $action where `RestId` = $restId";
+	$moreUpdate = "";
+	if($action == 2){
+		$moreUpdate = ", `Enable` = $action, `IsActive` = $action";
+	}
+	$sql = "UPDATE `RestaurantMaster` set `Approve`=$action, `UpdateDate`=current_timestamp $moreUpdate where `RestId` = $restId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";
@@ -261,12 +265,6 @@ else if($updateType == "appRejRest"){
 		$code = 200;
 		$actTxt = $action == 1 ? 'Approve' : 'Reject';
 		$message =  "Successfully ".$actTxt;
-
-		if($action == 2){
-			$sql1 = "UPDATE `RestaurantMaster` set `Enable` = $action, `IsActive` = $action where `RestId` = $restId"; 
-			$stmt1 = $conn->prepare($sql1);
-			$stmt1->execute();
-		}
 	}
 	else{
 		$code = 0;
@@ -278,7 +276,7 @@ else if($updateType == "appRejRest"){
 else if($updateType == "openCloseRest"){
 	$restId = $jsonData->restId;
 	$actionTxt = $jsonData->actionTxt;
-	$sql = "UPDATE `RestaurantMaster` set `Status` = '$actionTxt' where `RestId` = $restId";
+	$sql = "UPDATE `RestaurantMaster` set `Status`='$actionTxt', `UpdateDate`=current_timestamp where `RestId` = $restId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";
@@ -298,8 +296,7 @@ else if($updateType == "enaDisRest"){
 	$restId = $jsonData->restId;
 	$action = $jsonData->action;
 	$actionTxt = $jsonData->actionTxt;
-	// $sql = "UPDATE `RestaurantMaster` set `Enable` = $action, `IsActive` = $action where `RestId` = $restId";
-	$sql = "UPDATE `RestaurantMaster` set `Enable` = $action where `RestId` = $restId";
+	$sql = "UPDATE `RestaurantMaster` set `Enable`=$action, `UpdateDate`=current_timestamp where `RestId` = $restId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";
@@ -325,6 +322,23 @@ else if($updateType == "actDeactRider"){
 		$code = 200;
 		$actTxt = $action == 1 ? 'Active' : 'Deactive';
 		$message =  "Successfully ".$actTxt;
+	}
+	else{
+		$code = 0;
+		$message = "Something went wrong";
+	}
+	$output = array('code' => $code, 'message' => $message);
+	echo json_encode($output);
+}
+else if($updateType == "deleteOrder"){
+	$orderId = $jsonData->orderId;
+	$sql = "UPDATE `MyOrders` set `Status`=7, `DeletedDatetime`=current_timestamp where `OrderId`=$orderId";
+	$stmt = $conn->prepare($sql);
+	$code = 0;
+	$message = "";
+	if($stmt->execute()){
+		$code = 200;
+		$message =  "Order $orderId successfully deleted";
 	}
 	else{
 		$code = 0;
