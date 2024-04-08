@@ -1,6 +1,6 @@
 <?php 
 include("dbConfiguration.php");
-$sql = "SELECT mo.OrderId, ca.Name as CustomerName, ca.Contact as CustomerContact, ca.LatLong as CustomerLatlong, concat(ca.Address, ',', ca.City, ',', ca.Pincode, ',', ca.State) as CustomerAddress, rm.Name as RestaurantName, rm.Mobile as RestMobile, rm.Address as RestAddress, rm.LatLong as RestaurantLatlong, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.PaymentMode, mo.Instruction, mo.Status, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime FROM MyOrders mo join RestaurantMaster rm on mo.RestId = rm.RestId join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.RiderId = 0 and mo.Status not in (0,1,5,6) and mo.OrderAcceptDatetime is null";
+$sql = "SELECT mo.OrderId, ca.Name as CustomerName, ca.Contact as CustomerContact, ca.LatLong as CustomerLatlong, concat(ca.Address, ',', ca.City, ',', ca.Pincode, ',', ca.State) as CustomerAddress, rm.Name as RestaurantName, rm.Mobile as RestMobile, rm.Address as RestAddress, rm.LatLong as RestaurantLatlong, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.PaymentMode, mo.Instruction, mo.Status, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime FROM MyOrders mo join RestaurantMaster rm on mo.RestId = rm.RestId join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.RiderId = 0 and mo.Status not in (0,1,5,6,7) and mo.OrderAcceptDatetime is null";
 $result = mysqli_query($conn,$sql);
 $rowCount = mysqli_num_rows($result);
 $orderList = array();

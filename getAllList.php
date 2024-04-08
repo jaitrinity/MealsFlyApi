@@ -184,7 +184,7 @@ else if($searchType == "complaint"){
 		$filterSql .= "and date_format(c.`CreateDate`,'%Y-%m-%d') <= '$filterToDate'";
 	}
 
-	$sql = "SELECT c.Id, cm.Name as RaiseBy, c.Issue, c.Remark, date_format(c.CreateDate,'%d-%b-%Y %H:%i') as CreateDate, c.Status FROM Complaint c join CustomerMaster cm on c.RaiseBy = cm.CustId where 1=1 $filterSql ORDER by c.Id desc";
+	$sql = "SELECT c.Id, cm.Name as RaiseBy, cm.Mobile, c.Issue, c.Remark, date_format(c.CreateDate,'%d-%b-%Y %H:%i') as CreateDate, c.Status FROM Complaint c join CustomerMaster cm on c.RaiseBy = cm.CustId where 1=1 $filterSql ORDER by c.Id desc";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$result = $stmt->get_result();
@@ -521,7 +521,8 @@ else if($searchType == "orders"){
 		$filterSql .= "and date_format(`OrderDatetime`,'%Y-%m-%d') <= '$filterEndDate'";
 	}
 
-	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
+	// $sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
+	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -531,6 +532,7 @@ else if($searchType == "orders"){
 			'orderId' => strval($row["OrderId"]),
 			'restName' => $row["RestName"],
 			'custName' => $row["CustName"], 
+			'primaryMobile' => $row["Mobile"],
 			'deliveryAddress' => $row["DeliveryAddress"],
 			'paymentMode' => $row["PaymentMode"],
 			'instruction' => $row["Instruction"],

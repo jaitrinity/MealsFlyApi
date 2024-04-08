@@ -2,8 +2,8 @@
 include("dbConfiguration.php");
 require 'SendMailClass.php';
 
-// $toMailId = "ordersalertmealsfly@gmail.com";
-$toMailId = "jai.prakash@trinityapplab.co.in";
+$toMailId = "ordersalertmealsfly@gmail.com";
+// $toMailId = "jai.prakash@trinityapplab.co.in";
 // $ccMailId = "pushkar.tyagi@trinityapplab.co.in";
 $ccMailId = "";
 $bccMailId = "";

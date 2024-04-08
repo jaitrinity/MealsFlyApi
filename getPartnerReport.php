@@ -34,6 +34,7 @@ while($row = mysqli_fetch_assoc($result)){
 	$subTotal = $row["TotalPrice"];
 	$status = $row["Status"];
 	$calPayableAmount = ($subTotal * $commission)/100;
+	$calPayableAmount = round($calPayableAmount);
 	$payableAmount = $row["PayableAmount"] == null ? "" : $row["PayableAmount"];
 	$paymentStatus = "Pending";
 	if($payableAmount != ""){

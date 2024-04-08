@@ -22,12 +22,6 @@ if($orRowCount != 0){
 $custAddId = $jsonData->custAddId;
 $totalPrice = $jsonData->totalPrice;
 $deliveryCharge = $jsonData->deliveryCharge;
-if($deliveryCharge == 0){
-	$dcSql = "SELECT `DeliveryCharge` FROM `Distance` WHERE `RestId`=$restId and `CustAddId`=$custAddId and `IsDeleted`=0";
-	$dcQuery=mysqli_query($conn,$dcSql);
-	$dcRow = mysqli_fetch_assoc($dcQuery);
-	$deliveryCharge = $dcRow["DeliveryCharge"];
-}
 $grandTotal = floatval($totalPrice) + floatval($deliveryCharge);
 $paymentMode = $jsonData->paymentMode;
 $instruction = $jsonData->instruction;
@@ -177,6 +171,4 @@ else{
 }
 $output = array('orderId' => $orderId, 'code' => $code, 'message' => $message);
 echo json_encode($output);
-
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/log_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($output)."\n", FILE_APPEND);
 ?>

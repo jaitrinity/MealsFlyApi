@@ -2,7 +2,7 @@
 
 $path = dirname(__FILE__);
 // echo $path;
-$cron = $path . "/sendMail.php";
+$cron = $path . "/sendMailDemo.php";
 echo exec("***** php -q ".$cron." &> /dev/null");
 
 ?>

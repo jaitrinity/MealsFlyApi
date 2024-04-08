@@ -18,34 +18,17 @@ if($status < 0){
 	$rowCount = mysqli_num_rows($result);
 	if($rowCount == 0){
 		$riderId = $jsonData->riderId;
-		$sql1 = "SELECT * FROM `DeliveryBoyMaster` where `RiderId`=$riderId and `IsActive`=1";
-		$result1 = mysqli_query($conn,$sql1);
-		$rowCount1 = mysqli_num_rows($result1);
-		if($rowCount1 != 0){
-			$row1 = mysqli_fetch_assoc($result1);
-			$status = $row1["Status"];
-			if($status == 1){
-				$sql = "UPDATE `MyOrders` set `RiderId` = ?, `OrderAcceptDatetime` = CURRENT_TIMESTAMP where `OrderId` = ?";
-				$stmt = $conn->prepare($sql);
-				$stmt->bind_param("ii", $riderId, $orderId);
-				if($stmt->execute()){
-					$code = 200;
-					$message = "Successfully ";
-				}
-				else{
-					$code = 0;
-					$message = "Something went wrong";
-				}
-			}
-			else{
-				$code = 401;
-				$message = "Plz login in application first.";
-			}
+		$sql = "UPDATE `MyOrders` set `RiderId` = ?, `OrderAcceptDatetime` = CURRENT_TIMESTAMP where `OrderId` = ?";
+		$stmt = $conn->prepare($sql);
+		$stmt->bind_param("ii", $riderId, $orderId);
+		if($stmt->execute()){
+			$code = 200;
+			$message = "Successfully ";
 		}
 		else{
-			$code = 401;
-			$message = "You unable to accept this order please contact to admin";
-		}	
+			$code = 0;
+			$message = "Something went wrong";
+		}
 	}
 	else{
 		$code = 404;
