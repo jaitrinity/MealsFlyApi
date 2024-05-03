@@ -525,7 +525,7 @@ else if($searchType == "orders"){
 
 	// $sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
 	
-	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg, mo.RiderId, dm.Name as RiderName, dm.Mobile as RiderMobile FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status left join DeliveryBoyMaster dm on mo.RiderId=dm.RiderId where mo.Status != 7 $filterSql ORDER BY mo.OrderId  DESC";
+	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State) as DeliveryAddress, cm.Contact as DeliveryMobile, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg, mo.RiderId, dm.Name as RiderName, dm.Mobile as RiderMobile FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status left join DeliveryBoyMaster dm on mo.RiderId=dm.RiderId where mo.Status != 7 $filterSql ORDER BY mo.OrderId  DESC";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -542,6 +542,7 @@ else if($searchType == "orders"){
 			'custName' => $row["CustName"], 
 			'primaryMobile' => $row["Mobile"],
 			'deliveryAddress' => $row["DeliveryAddress"],
+			'deliveryMobile' => $row["DeliveryMobile"],
 			'paymentMode' => $row["PaymentMode"],
 			'instruction' => $row["Instruction"],
 			'totalPrice' => strval($row["TotalPrice"]), 
