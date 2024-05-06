@@ -63,7 +63,7 @@ class FirebaseNotificationClass{
 	}
 
 	function sendNotificationOld($multiToken, $title, $body, $image, $link){
-		$API_ACCESS_KEY = "AAAAI9Rhe0c:APA91bHlfE8ydlS-rAtgW1q7FDwgxqA-LTpBegR_ygkwq8TwyqR5VV7Ww6UCRr6glG3UvfLqwf8Sa_BKuO4xUh_smSmkwHS0TP7bOHEMYyiTI6C8iSAkQPhPDBkAbUdLsPT_8yGq445E";
+		$API_ACCESS_KEY = "";
 		$fcmUrl = 'https://fcm.googleapis.com/fcm/send';
 
 		$notification = [
