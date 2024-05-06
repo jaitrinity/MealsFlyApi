@@ -2,15 +2,15 @@
 class FirebaseNotificationClass{
 	function sendNotification($appName, $multiToken, $title, $body, $image, $link, $dataJson){
 		if($appName == "Restaurant"){
-			$API_ACCESS_KEY = "AAAAI9Rhe0c:APA91bHlfE8ydlS-rAtgW1q7FDwgxqA-LTpBegR_ygkwq8TwyqR5VV7Ww6UCRr6glG3UvfLqwf8Sa_BKuO4xUh_smSmkwHS0TP7bOHEMYyiTI6C8iSAkQPhPDBkAbUdLsPT_8yGq445E";
+			$API_ACCESS_KEY = "";
 			$android_channel_id = "restaurantAppId";
 		}
 		else if($appName == "Rider"){
-			$API_ACCESS_KEY = "AAAA5kEFoZ8:APA91bFiOwKF54UjjPlUPIaEFKpk6Bm3dw3B0SUtUcF4rmvaS3AveYfE8WvtbWbC_u5V4Mxow2wp8x4HOvtqC8wc6DvEmXs09GYTCcCJzX0ou_W0kD3JCTg5mnC8NX-VSfJs1uP79t3-";	
+			$API_ACCESS_KEY = "";	
 			$android_channel_id = "delivery_app";
 		}
 		else if($appName == "Customer"){
-			$API_ACCESS_KEY = "AAAAvFcbKxY:APA91bFaq6bXTwMPAf-u6UgyRwLg7NaqQYBnhyVFILV-XUJIzRKWpNNKvnsdeLHkSrJQ9iVNMPaWLtL_TDr20HGraOuDAlzDD2oLFhTQJiyrY2MfARilwddQGELdkmQ59Nbxt2QGLs1L";
+			$API_ACCESS_KEY = "";
 			$android_channel_id = "mealsfly_app";
 		}
 		
