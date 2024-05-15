@@ -8,7 +8,7 @@ if($methodType != "POST"){
 $json = file_get_contents('php://input');
 $jsonData = json_decode($json);
 
-$api_key = "AIzaSyDkCjzv4fVu7wlsp31Tu0AnpbyQaxm4Kz8";
+$api_key = "";
 $custAddId = $jsonData->custAddId;
 $restId = $jsonData->restId;
 
