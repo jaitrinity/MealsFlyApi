@@ -17,7 +17,8 @@ $query = $stmt->get_result();
 if(mysqli_num_rows($query) != 0){
 	$row = mysqli_fetch_assoc($query);
 	$userInfo = array(
-		'name' => $row["Name"]
+		'name' => $row["Name"],
+		'roleId' => $row["RoleId"]
 	);
 	$output = array('code' => 200, 'message' => 'Success','userInfo' => $userInfo);
 	echo json_encode($output);

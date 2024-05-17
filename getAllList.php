@@ -42,6 +42,7 @@ else if($searchType == "riderReport"){
 	$filterToDate = $jsonData->filterToDate;
 	$filterRider = $jsonData->filterRider;
 
+	$filterSql = "";
 	if($filterFromDate != ""){
 		 $filterSql .= "and date_format(mo.`OrderDatetime`,'%Y-%m-%d') >= '$filterFromDate'";
 	}
@@ -341,8 +342,36 @@ else if($searchType == "restaurantMenu"){
 	}
 	echo json_encode($restList);
 }
+// else if($searchType == "menuList"){
+// 	$sql = "SELECT `Id`, `Name`, `Icon`, `RouterLink` FROM `MenuMaster` where `IsActive` = 1 ORDER by `DisplayOrder`";
+// 	$stmt = $conn->prepare($sql);
+// 	$stmt->execute();
+// 	$query = $stmt->get_result();
+// 	$menuList = array();
+// 	while($row = mysqli_fetch_assoc($query)){
+// 		$menuJson = new StdClass();
+// 		foreach ($row as $key => $value) {
+// 			$key = lcfirst($key);
+// 			$menuJson->$key = strval($value);
+// 		}
+// 		array_push($menuList, $menuJson);
+
+// 		// $menuJson = array(
+// 		// 	'menuId' => $row["Id"], 
+// 		// 	'name' => $row["Name"], 
+// 		// 	'routerLink' => $row["RouterLink"]
+// 		// );
+// 		// array_push($menuList, $menuJson);
+// 	}
+// 	echo json_encode($menuList);
+// }
 else if($searchType == "menuList"){
-	$sql = "SELECT `Id`, `Name`, `Icon`, `RouterLink` FROM `MenuMaster` where `IsActive` = 1 ORDER by `DisplayOrder`";
+	$loginEmpRoleId = $jsonData->loginEmpRoleId;
+	$filterSql = "";
+	if($loginEmpRoleId != "1"){
+		$filterSql .= "and  find_in_set(`RoleId`,$loginEmpRoleId)";
+	}
+	$sql = "SELECT `Id`, `Name`, `Icon`, `RouterLink` FROM `MenuMaster` where 1=1 $filterSql and `IsActive`=1 ORDER by `DisplayOrder`";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -354,13 +383,6 @@ else if($searchType == "menuList"){
 			$menuJson->$key = strval($value);
 		}
 		array_push($menuList, $menuJson);
-
-		// $menuJson = array(
-		// 	'menuId' => $row["Id"], 
-		// 	'name' => $row["Name"], 
-		// 	'routerLink' => $row["RouterLink"]
-		// );
-		// array_push($menuList, $menuJson);
 	}
 	echo json_encode($menuList);
 }

@@ -2,15 +2,15 @@
 class FirebaseNotificationClass{
 	function sendNotification($appName, $multiToken, $title, $body, $image, $link, $dataJson){
 		if($appName == "Restaurant"){
-			$API_ACCESS_KEY = "";
+			$API_ACCESS_KEY = "[API_ACCESS_KEY]";
 			$android_channel_id = "restaurantAppId";
 		}
 		else if($appName == "Rider"){
-			$API_ACCESS_KEY = "";	
+			$API_ACCESS_KEY = "[API_ACCESS_KEY]";	
 			$android_channel_id = "delivery_app";
 		}
 		else if($appName == "Customer"){
-			$API_ACCESS_KEY = "";
+			$API_ACCESS_KEY = "[API_ACCESS_KEY]";
 			$android_channel_id = "mealsfly_app";
 		}
 		
@@ -63,7 +63,7 @@ class FirebaseNotificationClass{
 	}
 
 	function sendNotificationOld($multiToken, $title, $body, $image, $link){
-		$API_ACCESS_KEY = "";
+		$API_ACCESS_KEY = "[API_ACCESS_KEY]";
 		$fcmUrl = 'https://fcm.googleapis.com/fcm/send';
 
 		$notification = [
