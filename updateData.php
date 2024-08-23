@@ -347,4 +347,64 @@ else if($updateType == "deleteOrder"){
 	$output = array('code' => $code, 'message' => $message);
 	echo json_encode($output);
 }
+else if($updateType == "updateOrderItem"){
+	$orderId = $jsonData->orderId;
+	$totalPrice = $jsonData->totalPrice;
+	$grandTotal = $jsonData->grandTotal;
+	$orderItemList = $jsonData->orderItemList;
+	for($i=0;$i<count($orderItemList);$i++){
+		$orderItemObj = $orderItemList[$i];
+		$orderItemId = $orderItemObj->orderItemId;
+		$newQuantity = $orderItemObj->newQuantity;
+		$price = $orderItemObj->price;
+
+		if($newQuantity != ""){
+			$updateItemSql = "UPDATE `MyOrderItems` set `Quantity`=$newQuantity, `Price`=$price where `OrderItemId`=$orderItemId";
+			$updateItemStmt = $conn->prepare($updateItemSql);
+			$updateItemStmt->execute();
+		}
+	}
+
+	$sql = "UPDATE `MyOrders` set `TotalPrice`=$totalPrice, `GrandTotal`=$grandTotal where `OrderId`=$orderId";
+	$stmt = $conn->prepare($sql);
+	$code = 0;
+	$message = "";
+	if($stmt->execute()){
+		$code = 200;
+		$message =  "Order $orderId successfully updated";
+	}
+	else{
+		$code = 0;
+		$message = "Something went wrong";
+	}
+	$output = array('code' => $code, 'message' => $message);
+	echo json_encode($output);
+
+}
+else if($updateType == "deleteOrderItem"){
+	$orderId = $jsonData->orderId;
+	$deleteItemPrice = $jsonData->deleteItemPrice;
+	$deleteItemArr = $jsonData->deleteItemArr;
+	for($i=0;$i<count($deleteItemArr);$i++){
+		$orderItemId = $deleteItemArr[$i];
+		$updateItemSql = "UPDATE `MyOrderItems` set `IsDeleted`=1 where `OrderItemId`=$orderItemId";
+		$updateItemStmt = $conn->prepare($updateItemSql);
+		$updateItemStmt->execute();
+	}
+
+	$sql = "UPDATE `MyOrders` set `TotalPrice`=`TotalPrice`-$deleteItemPrice, `GrandTotal`=`GrandTotal`-$deleteItemPrice where `OrderId`=$orderId";
+	$stmt = $conn->prepare($sql);
+	$code = 0;
+	$message = "";
+	if($stmt->execute()){
+		$code = 200;
+		$message =  "Order item successfully deleted";
+	}
+	else{
+		$code = 0;
+		$message = "Something went wrong";
+	}
+	$output = array('code' => $code, 'message' => $message);
+	echo json_encode($output);
+}
 ?>

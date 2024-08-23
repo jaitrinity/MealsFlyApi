@@ -6,7 +6,6 @@ if($methodType != "POST"){
 }
 $json = file_get_contents('php://input');
 $jsonData=json_decode($json);
-
 $mobile = $jsonData->mobile;
 
 $confiSql = "SELECT * FROM `Configuration` where `Id` = 1";
@@ -56,37 +55,11 @@ if(mysqli_num_rows($query) != 0){
 	}
 }
 else{
-	$randomOtp = 0;
-	$msgStatus = false;
-	if(in_array($mobile,$mobileArr)){
-		$randomOtp = 1234;	
-		$msgStatus = true;
-	}
-	else{
-		$randomOtp = rand(1000,9999);
-		require_once 'SendOtpClass.php';
-		$classObj = new SendOtpClass();
-		$appName = "MealsFly - Customer";
-		$msgStatus = $classObj->sendOtp($randomOtp, $mobile, $appName);
-	}
-
-	if($msgStatus){
-		$profilePic = "https://www.trinityapplab.in/MealsFly/files/default.png";
-		$sql = "INSERT INTO `CustomerMaster`(`Name`,`Mobile`,`ProfilePic`,`OTP`,`IsOTPExpired`) VALUES ('',?,?,?,0)";
-		$stmt = $conn->prepare($sql);
-		$stmt->bind_param("ssi", $mobile, $profilePic, $randomOtp);
-		if($stmt->execute()){
-			$output = array('code' => 200, 'message' => 'OTP send to mobile');
-			echo json_encode($output);
-		}
-		else{
-			$output = array('code' => 500, 'message' => 'Something went wrong while sending OTP');
-			echo json_encode($output);
-		}
-	}
-	else{
-		$output = array('code' => 500, 'message' => 'Something went wrong while sending OTP');
-		echo json_encode($output);
-	}
+	$output = array('code' => 404, 'message' => 'Record not found');
+	echo json_encode($output);
 }
+
+
+
+
 ?>

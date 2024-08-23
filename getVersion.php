@@ -14,4 +14,6 @@ $output = array(
 );
 echo json_encode($output);
 
+file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/version_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$output."\n", FILE_APPEND);
+
 ?>

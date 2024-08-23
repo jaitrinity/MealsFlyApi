@@ -1,7 +1,7 @@
 <?php
 include("dbConfiguration.php");
 $custId = $_REQUEST["custId"];
-$sql = "SELECT o.OrderId, res.Name as RestName, res.LatLong as RestLatlong, o.TotalPrice, o.DeliveryCharge, o.GrandTotal, ca.Name as CustomerName, ca.Contact as CustomerContact, concat(ca.Name, ', ', ca.Address, ', ', ca.City, ', ', ca.Pincode, ', ', ca.State) as Address, ca.LatLong, o.PaymentMode, o.PaymentStatus, o.Instruction, o.Status, os.StatusTxt, date_format(o.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, date_format(o.PreparingDatetime,'%d-%b-%Y %H:%i') as PreparingDatetime, date_format(o.ReadyDatetime,'%d-%b-%Y %H:%i') as ReadyDatetime, date_format(o.PickedUpDatetime,'%d-%b-%Y %H:%i') as PickedUpDatetime, date_format(o.DeliveredDatetime,'%d-%b-%Y %H:%i') as DeliveredDatetime, date_format(o.CancelledDatetime,'%d-%b-%Y %H:%i') as CancelledDatetime, o.CancellationMsg, o.RiderId FROM MyOrders o join CustomerAddress ca on o.CustAddId = ca.CustAddId join OrderStatus os on o.Status = os.Status join RestaurantMaster res on o.RestId = res.RestId where o.Status != 7 and o.CustId = $custId ORDER by o.OrderDatetime";
+$sql = "SELECT o.OrderId, res.Name as RestName, res.LatLong as RestLatlong, o.TotalPrice, o.DeliveryCharge, o.GrandTotal, ca.Name as CustomerName, ca.Contact as CustomerContact, concat(ca.Name, ', ', ca.Address, ', ', ca.City, ', ', ca.Pincode, ', ', ca.State) as Address, ca.LatLong, o.PaymentMode, o.PaymentStatus, o.Instruction, o.Status, os.StatusTxt, date_format(o.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, date_format(o.PreparingDatetime,'%d-%b-%Y %H:%i') as PreparingDatetime, date_format(o.ReadyDatetime,'%d-%b-%Y %H:%i') as ReadyDatetime, date_format(o.PickedUpDatetime,'%d-%b-%Y %H:%i') as PickedUpDatetime, date_format(o.DeliveredDatetime,'%d-%b-%Y %H:%i') as DeliveredDatetime, date_format(o.CancelledDatetime,'%d-%b-%Y %H:%i') as CancelledDatetime, o.CancellationMsg, o.RiderId, o.SelfAccept FROM MyOrders o join CustomerAddress ca on o.CustAddId = ca.CustAddId join OrderStatus os on o.Status = os.Status join RestaurantMaster res on o.RestId = res.RestId where o.Status != 7 and o.CustId = $custId ORDER by o.OrderDatetime";
 $result = mysqli_query($conn,$sql);
 $orderList = array();
 while($row = mysqli_fetch_assoc($result)){
@@ -66,8 +66,10 @@ while($row = mysqli_fetch_assoc($result)){
 		'cancellationMsg' => $row["CancellationMsg"] == null ? "" : $row["CancellationMsg"],
 		'status' => $status,
 		'statusTxt' => $statusTxt,
+		'selfAccept' => $row["SelfAccept"],
 		'riderInfo' => $riderInfo,
-		'orderItemList' => $orderItemList 
+		'orderItemList' => $orderItemList
+
 	);
 	array_push($orderList, $orderJson);
 }

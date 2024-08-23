@@ -15,14 +15,16 @@ $latitude = $latlongExp[0];
 $longitude = $latlongExp[1];
 
 
+$filterSql = "";
 if($searchPincode != ""){
-	$sql = "SELECT * FROM `RestaurantMaster` where `Pincode` = $searchPincode and `IsActive`=1 and `Enable`=1 order by `DisplayOrder`";
-}
-else{
-	$sql = "SELECT * from (SELECT *, ST_Distance_Sphere(point($latitude,$longitude), point(Latitude, Longitude)) as Distance, getCustomerToPartnerDistance() as DistRange FROM RestaurantMaster where 1=1 and IsActive=1 and Enable=1) t where t.Distance < t.DistRange Order BY t.Distance";
+	$filterSql = "and Pincode = $searchPincode";
 }
 
+// $sql = "SELECT * from (SELECT *, (case when ST_Distance_Sphere(point($latitude, $longitude), point(Latitude, Longitude)) is null then DisplayOrder else ST_Distance_Sphere(point($latitude, $longitude), point(Latitude, Longitude)) end) as Distance FROM RestaurantMaster where 1=1 $filterSql and IsActive=1 and Enable=1) t where t.Distance < 2000 Order BY t.Distance";
 
+// $sql = "SELECT * from (SELECT *, ST_Distance_Sphere(point($latitude, $longitude), point(Latitude, Longitude)) as Distance FROM RestaurantMaster where 1=1 and IsActive=1 and Enable=1) t where t.Distance < 2000 Order BY t.Distance";
+
+$sql = "SELECT * from (SELECT *, ST_Distance_Sphere(point($latitude,$longitude), point(Latitude, Longitude)) as Distance, getCustomerToPartnerDistance() as DistRange FROM RestaurantMaster where 1=1 $filterSql and IsActive=1 and Enable=1) t where t.Distance < t.DistRange Order BY t.Distance";
 	// echo $sql;
 
 

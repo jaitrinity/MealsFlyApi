@@ -15,7 +15,7 @@ $model = $jsonData->model;
 $os = $jsonData->os;
 $osVer = $jsonData->osVersion;
 $appVer = $jsonData->appVersion;
-
+$latlong = $jsonData->latlong;
 
 $sql = "SELECT * FROM `CustomerMaster` where `Mobile` = ? and `OTP` = ? and `IsOTPExpired` = 0";
 $stmt = $conn->prepare($sql);
@@ -70,9 +70,9 @@ if(mysqli_num_rows($query) != 0){
 	);
 	echo json_encode($output);
 
-	$sql = "UPDATE `CustomerMaster` set `IsOTPExpired` = 1 where `Mobile` = ? and `OTP` = ? and `IsOTPExpired` = 0";
+	$sql = "UPDATE `CustomerMaster` set `LatLong`=?, `IsOTPExpired`=1 where `Mobile`=? and `OTP`=? and `IsOTPExpired`=0";
 	$stmt = $conn->prepare($sql);
-	$stmt->bind_param("si", $mobile, $otp);
+	$stmt->bind_param("ssi", $latlong, $mobile, $otp);
 	$stmt->execute();
 
 	if($token !=null && $token != ''){

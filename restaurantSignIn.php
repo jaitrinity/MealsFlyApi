@@ -46,7 +46,10 @@ else{
 		}
 		else{
 			$randomOtp = rand(1000,9999);
-			$msgStatus = sendOtp($mobile,$randomOtp);
+			require_once 'SendOtpClass.php';
+			$classObj = new SendOtpClass();
+			$appName = "MealsFly - Restaurant";
+			$msgStatus = $classObj->sendOtp($randomOtp, $mobile, $appName);
 		}
 		if($msgStatus){
 			$sql = "UPDATE `RestaurantMaster` set `OTP` = ?, `IsOTPExpired` = 0 where `Mobile` = ?";
@@ -67,52 +70,4 @@ else{
 		}
 	}
 }
-?>
-
-<?php
-function sendOtp($mobile,$taskotp)
-{
-	//api for sending the otp
-	$appName = "MealsFly - Restaurant";
-	$message = "Your one time password (OTP) is ".$taskotp." for ".$appName." application.";
-	$apikey = "ae6fa4-5cab56-4bc26d-caa56f-b27aab";
-	$senderId = "TRIAPP";
-	$route = "default";
-	$st = true;
-	$postData = array(
-            'apikey' => $apikey,	
-	    'dest_mobileno' => $mobile,
-	    'message' => $message,
-	    'senderid' => $senderId,
-	    'route' => $route,
-	    'response' => "Y",
-	    'msgtype' => "TXT"
-	);
-	$url="http://www.smsjust.com/sms/user/urlsms.php";
-	// init the resource
-	$ch = curl_init();
-	curl_setopt_array($ch, array(
-	    CURLOPT_URL => $url,
-	    CURLOPT_RETURNTRANSFER => true,
-	    CURLOPT_POST => true,
-	    CURLOPT_POSTFIELDS => $postData
-	    //,CURLOPT_FOLLOWLOCATION => true
-
-	));
-		//Ignore SSL certificate verification
-	curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-	//get response
-	$output = curl_exec($ch);
-	//Print error if any
-	if(curl_errno($ch))
-	{
-	    echo 'error:' . curl_error($ch);
-		$st = false;
-	}
-	curl_close($ch);
-	return $st;
-	
-}
-
 ?>

@@ -1,31 +1,6 @@
 <?php 
 include("dbConfiguration.php");
-$methodType = $_SERVER['REQUEST_METHOD'];
-if($methodType != "POST"){
-	return;
-}
-$json = file_get_contents('php://input');
-$jsonData=json_decode($json);
- 
-$custLatlong = $jsonData->custLatlong;
-$searchPincode = $jsonData->searchPincode;
-
-$latlongExp = explode(",", $custLatlong);
-$latitude = $latlongExp[0];
-$longitude = $latlongExp[1];
-
-
-if($searchPincode != ""){
-	$sql = "SELECT * FROM `RestaurantMaster` where `Pincode` = $searchPincode and `IsActive`=1 and `Enable`=1 order by `DisplayOrder`";
-}
-else{
-	$sql = "SELECT * from (SELECT *, ST_Distance_Sphere(point($latitude,$longitude), point(Latitude, Longitude)) as Distance, getCustomerToPartnerDistance() as DistRange FROM RestaurantMaster where 1=1 and IsActive=1 and Enable=1) t where t.Distance < t.DistRange Order BY t.Distance";
-}
-
-
-	// echo $sql;
-
-
+$sql = "SELECT * FROM `RestaurantMaster` where `IsActive`=1 and `Enable`=1 order by `DisplayOrder`";
 $result = mysqli_query($conn,$sql);
 $restList = array();
 while($row=mysqli_fetch_assoc($result)){

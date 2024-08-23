@@ -22,7 +22,8 @@ if($orRowCount != 0){
 $custAddId = $jsonData->custAddId;
 $totalPrice = $jsonData->totalPrice;
 $deliveryCharge = $jsonData->deliveryCharge;
-if($deliveryCharge == 0){
+$selfAccept = $jsonData->selfAccept;
+if($deliveryCharge == 0 && $selfAccept == 0){
 	$dcSql = "SELECT `DeliveryCharge` FROM `Distance` WHERE `RestId`=$restId and `CustAddId`=$custAddId and `IsDeleted`=0";
 	$dcQuery=mysqli_query($conn,$dcSql);
 	$dcRow = mysqli_fetch_assoc($dcQuery);
@@ -30,12 +31,21 @@ if($deliveryCharge == 0){
 }
 $grandTotal = floatval($totalPrice) + floatval($deliveryCharge);
 $paymentMode = $jsonData->paymentMode;
+$paymentId = $jsonData->paymentId;
 $instruction = $jsonData->instruction;
 $paymentStatus = $jsonData->paymentStatus;
 $status = 1;
-if($paymentStatus == 0) $status = 6;
+if($paymentStatus == 0){
+	// Payment decline
+	$status = 6;
+}
+
+// if($selfAccept == 1){
+// 	// Deliver
+// 	$status = 5;
+// }
 $itemList = $jsonData->itemList;
-$sql = "INSERT INTO `MyOrders`(`RestId`, `CustId`, `TotalPrice`, `DeliveryCharge`, `GrandTotal`, `CustAddId`, `PaymentMode`, `PaymentStatus`, `Instruction`, `Status`) VALUES ($restId, $custId, $totalPrice, $deliveryCharge, $grandTotal, $custAddId, '$paymentMode', $paymentStatus, '$instruction', $status)";
+$sql = "INSERT INTO `MyOrders`(`RestId`, `CustId`, `TotalPrice`, `DeliveryCharge`, `GrandTotal`, `CustAddId`, `PaymentMode`, `PaymentId`, `PaymentStatus`, `Instruction`, `Status`, `SelfAccept`) VALUES ($restId, $custId, $totalPrice, $deliveryCharge, $grandTotal, $custAddId, '$paymentMode', '$paymentId', $paymentStatus, '$instruction', $status, $selfAccept)";
 $stmt = $conn->prepare($sql);
 $message = "";
 $orderIdList = array();
@@ -72,83 +82,36 @@ $code = 0;
 if($message == ""){
 	$code = 200;
 	$message = "Successfully inserted";
-
-	// Customer notication
-	$sql2 = "SELECT `Token` FROM `Device` where `UserId` = $custId and `AppName` = 1";
-	$result2 = mysqli_query($conn,$sql2);
-	$rowCount =mysqli_num_rows($result2);
-	if($rowCount != 0){
-		$tokenList = [];
-		while($row2 = mysqli_fetch_assoc($result2)){
-			array_push($tokenList, $row2["Token"]);
-		}
-		$tokens = implode(",", $tokenList);
-		$title = "New Order";
-		$body = "Thank you for ordering on mealsfly, your food will be delivered soon";
-		$image = "";
-		$link = "";
-		$orderJson = new StdClass;
-		$appName = "Customer";
-		require_once 'FirebaseNotificationClass.php';
-		$classObj = new FirebaseNotificationClass();
-		$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
-		$notificationResult = json_decode($notiResult);
-		$notificationStatus = $notificationResult->success;
-		$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
-		$notiStmt = $conn->prepare($notiSql);
-		$notiStmt->execute();
+	if($paymentStatus == 1 && $paymentMode == "online"){
+		require_once 'CallRestApiClass.php';
+		$razorPayTotal = intval($grandTotal) * 100;
+		$classObj = new CallRestApiClass();
+		$request = array('amount' => $razorPayTotal,'currency' => 'INR');
+		$request = json_encode($request);
+		$url = "https://api.razorpay.com/v1/payments/".$paymentId."/capture";
+		$razorPayResult = $classObj->razorPayApi($url, $request);
+		$razorPaySql = "UPDATE `MyOrders` set `RazorpayStatus`='$razorPayResult' where `OrderId` = $orderId";
+		$razorPayStmt = $conn->prepare($razorPaySql);
+		$razorPayStmt->execute();
 	}
 
-	// Restaurant Notification
-	$sql2 = "SELECT `Token` FROM `Device` where `UserId` = $restId and `AppName` = 2";
-	$result2 = mysqli_query($conn,$sql2);
-	$rowCount =mysqli_num_rows($result2);
-	if($rowCount != 0){
-		$tokenList = [];
-		while($row2 = mysqli_fetch_assoc($result2)){
-			array_push($tokenList, $row2["Token"]);
-		}
-		$tokens = implode(",", $tokenList);
-		$title = "";
-		$body = "New order ! You have recieved a new order on mealsfly";
-		$image = "";
-		$link = "";
-
-		$sql3 = "SELECT mo.OrderId, ca.Name as CustomerName, ca.Contact as CustomerContact, concat(ca.Contact,', ',ca.Address,', ', ca.City,', ', ca.Pincode,', ', ca.State) as Address, rm.Name as RestaurantName, mo.TotalPrice, mo.PaymentMode, mo.Instruction, mo.Status, mo.OrderDatetime FROM MyOrders mo join RestaurantMaster rm on mo.RestId = rm.RestId join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.OrderId = $orderId";
-		$result3 = mysqli_query($conn,$sql3);
-		$rowCount3 = mysqli_num_rows($result3);
-		if($rowCount3 !=0){
-			$row3 = mysqli_fetch_assoc($result3);
-
-			$orderItemList = array();
-			$sql4 = "SELECT im.Name, cm.Name as CatName, moi.Unit, moi.Quantity, moi.Price FROM MyOrderItems moi join ItemMaster im on moi.ItemId = im.ItemId join CategoryMaster cm on moi.CatId = cm.CatId where moi.OrderId = $orderId";
-			$result4 = mysqli_query($conn,$sql4);
-			while($row4 = mysqli_fetch_assoc($result4)){
-				$orderItemJson = array(
-					'itemName' => $row4["Name"],
-					'categoryName' => $row4["CatName"],
-					'size' => $row4["Unit"],
-					'quantity' => $row4["Quantity"],
-					'price' => $row4["Price"]
-				);
-				array_push($orderItemList, $orderItemJson);
+	// if($selfAccept == 0){
+		// Customer notication
+		$sql2 = "SELECT `Token` FROM `Device` where `UserId` = $custId and `AppName` = 1";
+		$result2 = mysqli_query($conn,$sql2);
+		$rowCount =mysqli_num_rows($result2);
+		if($rowCount != 0){
+			$tokenList = [];
+			while($row2 = mysqli_fetch_assoc($result2)){
+				array_push($tokenList, $row2["Token"]);
 			}
-
-			$orderJson = array(
-				'orderId' => $row3["OrderId"],
-				'customerName' => $row3["CustomerName"],
-				'contact' => $row3["CustomerContact"],
-				'address' => $row3["Address"],
-				'restaurantName' => $row3["RestaurantName"],
-				'totalPrice' => $row3["TotalPrice"],
-				'paymentMode' => $row3["PaymentMode"],
-				'instruction' => $row3["Instruction"],
-				'status' => $row3["Status"],
-				'orderItemList' => $orderItemList
-			);
-
-			// $output = array();
-			$appName = "Restaurant";
+			$tokens = implode(",", $tokenList);
+			$title = "New Order";
+			$body = "Thank you for ordering on mealsfly, your food will be delivered soon";
+			$image = "";
+			$link = "";
+			$orderJson = new StdClass;
+			$appName = "Customer";
 			require_once 'FirebaseNotificationClass.php';
 			$classObj = new FirebaseNotificationClass();
 			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
@@ -157,14 +120,71 @@ if($message == ""){
 			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
 			$notiStmt->execute();
-			// if($notificationStatus !=0){
-			// 	$output = array('status' => 'success', 'message' => 'Successfully send');
-			// }
-			// else{
-			// 	$output = array('status' => 'fail', 'message' => 'Something went wrong');
-			// }
-		}	
-	}
+		}
+
+		// Restaurant Notification
+		if($status == 1){
+			$sql2 = "SELECT `Token` FROM `Device` where `UserId` = $restId and `AppName` = 2";
+			$result2 = mysqli_query($conn,$sql2);
+			$rowCount =mysqli_num_rows($result2);
+			if($rowCount != 0){
+				$tokenList = [];
+				while($row2 = mysqli_fetch_assoc($result2)){
+					array_push($tokenList, $row2["Token"]);
+				}
+				$tokens = implode(",", $tokenList);
+				$title = "";
+				$body = "New order ! You have recieved a new order on mealsfly";
+				$image = "";
+				$link = "";
+
+				$sql3 = "SELECT mo.OrderId, ca.Name as CustomerName, ca.Contact as CustomerContact, concat(ca.Contact,', ',ca.Address,', ', ca.City,', ', ca.Pincode,', ', ca.State) as Address, rm.Name as RestaurantName, mo.TotalPrice, mo.PaymentMode, mo.Instruction, mo.Status, mo.OrderDatetime FROM MyOrders mo join RestaurantMaster rm on mo.RestId = rm.RestId join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.OrderId = $orderId";
+				$result3 = mysqli_query($conn,$sql3);
+				$rowCount3 = mysqli_num_rows($result3);
+				if($rowCount3 !=0){
+					$row3 = mysqli_fetch_assoc($result3);
+
+					$orderItemList = array();
+					$sql4 = "SELECT im.Name, cm.Name as CatName, moi.Unit, moi.Quantity, moi.Price FROM MyOrderItems moi join ItemMaster im on moi.ItemId = im.ItemId join CategoryMaster cm on moi.CatId = cm.CatId where moi.OrderId = $orderId";
+					$result4 = mysqli_query($conn,$sql4);
+					while($row4 = mysqli_fetch_assoc($result4)){
+						$orderItemJson = array(
+							'itemName' => $row4["Name"],
+							'categoryName' => $row4["CatName"],
+							'size' => $row4["Unit"],
+							'quantity' => $row4["Quantity"],
+							'price' => $row4["Price"]
+						);
+						array_push($orderItemList, $orderItemJson);
+					}
+
+					$orderJson = array(
+						'orderId' => $row3["OrderId"],
+						'customerName' => $row3["CustomerName"],
+						'contact' => $row3["CustomerContact"],
+						'address' => $row3["Address"],
+						'restaurantName' => $row3["RestaurantName"],
+						'totalPrice' => $row3["TotalPrice"],
+						'paymentMode' => $row3["PaymentMode"],
+						'instruction' => $row3["Instruction"],
+						'status' => $row3["Status"],
+						'orderItemList' => $orderItemList
+					);
+
+					$appName = "Restaurant";
+					require_once 'FirebaseNotificationClass.php';
+					$classObj = new FirebaseNotificationClass();
+					$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+					$notificationResult = json_decode($notiResult);
+					$notificationStatus = $notificationResult->success;
+					$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
+					$notiStmt = $conn->prepare($notiSql);
+					
+				}	
+			}
+		}
+			
+	// }
 }
 else{
 	$delOrder = "DELETE FROM `MyOrders` where `OrderId` in (implode(',', $orderIdList))";

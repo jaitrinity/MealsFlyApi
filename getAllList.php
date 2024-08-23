@@ -421,12 +421,15 @@ else if($searchType == "allCategory"){
 }
 
 else if($searchType == "restaurant"){
-	$sql = "SELECT *, concat(date_format(`OpenTime`,'%r'),' - ',date_format(`CloseTime`,'%r')) as `OpenCloseTime` FROM `RestaurantMaster` where `IsActive` = 1 order by `DisplayOrder`";
+	$sql = "SELECT *, concat(date_format(`OpenTime`,'%r'),' - ',date_format(`CloseTime`,'%r')) as `OpenCloseTime` FROM `RestaurantMaster` where `IsActive` = 1 order by `Pincode`, `DisplayOrder`";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
+	$restPincode = array();
 	$restList = array();
 	while($row = mysqli_fetch_assoc($query)){
+		$pincode = $row["Pincode"];
+		array_push($restPincode, $pincode);
 		$approve = $row["Approve"];
 		$enable = $row["Enable"];
 		$approveTxt = "Pending";
@@ -440,6 +443,7 @@ else if($searchType == "restaurant"){
 			'name' => $row["Name"], 
 			'mobile' => $row["Mobile"], 
 			'address' => $row["Address"],
+			'pincode' => strval($pincode),
 			'image' => $row["Image"], 
 			'banner' => $row["Banner"], 
 			'latLong' => $row["LatLong"], 
@@ -455,7 +459,13 @@ else if($searchType == "restaurant"){
 		);
 		array_push($restList, $restJson);
 	}
-	echo json_encode($restList);
+
+	$restPincodeList = array_unique($restPincode);
+	$restPincodeList = array_values($restPincodeList);
+
+	$output = array('restPincodeList' => $restPincodeList, 'restList' => $restList);
+
+	echo json_encode($output);
 }
 else if($searchType == "restaurantItem"){
 	$restId = $jsonData->restId;
@@ -543,9 +553,6 @@ else if($searchType == "orders"){
 		$filterSql .= "and date_format(`OrderDatetime`,'%Y-%m-%d') <= '$filterEndDate'";
 	}
 
-	// $sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
-
-	// $sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State,', ',cm.Contact) as DeliveryAddress, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status where mo.Status != 7 $filterSql order by mo.OrderId desc";
 	
 	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State) as DeliveryAddress, cm.Contact as DeliveryMobile, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg, mo.RiderId, dm.Name as RiderName, dm.Mobile as RiderMobile FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status left join DeliveryBoyMaster dm on mo.RiderId=dm.RiderId where mo.Status != 7 $filterSql ORDER BY mo.OrderId  DESC";
 	$stmt = $conn->prepare($sql);
@@ -582,22 +589,42 @@ else if($searchType == "orders"){
 		);
 		array_push($orderList, $orderJson);
 	}
-	echo json_encode($orderList);
+
+	$columnName = array();
+	$columnData = array();
+	// $sql = "SELECT os.StatusTxt as Status, count(mo.Status) as TotalCount FROM OrderStatus os left join MyOrders mo on os.Status=mo.Status $filterSql where os.Status != 7 GROUP by os.Status order by os.Status";
+
+	$sql = "SELECT (case when os.Status=3 then 'Ready' when os.Status=4 then 'Picked Up' else os.StatusTxt end) as Status, count(mo.Status) as TotalCount FROM OrderStatus os left join MyOrders mo on os.Status=mo.Status $filterSql where os.Status not in (0,6,7) GROUP by os.Status order by os.Status";
+
+	$result = mysqli_query($conn,$sql);
+	while($row=mysqli_fetch_assoc($result)){
+		$status = $row["Status"];
+		$totalCount = $row["TotalCount"];
+		array_push($columnName, $status);
+		array_push($columnData, $totalCount);
+	}
+	$output = array('orderList' => $orderList, 'columnName' => $columnName, 'columnData' => $columnData);
+
+	echo json_encode($output);
 }
 else if($searchType == "orderItem"){
 	$orderId = $jsonData->orderId;
-	$sql = "SELECT im.Name as ItemName, cm.Name as CatName, oi.Unit, oi.Quantity, oi.Price FROM MyOrderItems oi join ItemMaster im on oi.ItemId = im.ItemId join CategoryMaster cm on im.CatId = cm.CatId where oi.OrderId = $orderId";
+	// $sql = "SELECT oi.OrderItemId, im.Name as ItemName, cm.Name as CatName, oi.Unit, oi.Quantity, oi.Price FROM MyOrderItems oi join ItemMaster im on oi.ItemId = im.ItemId join CategoryMaster cm on im.CatId = cm.CatId where oi.OrderId = $orderId";
+	$sql = "SELECT oi.OrderItemId, im.Name as ItemName, cm.Name as CatName, oi.Unit, oi.Quantity, oi.Price, iu.Price as PerUnitPrice FROM MyOrderItems oi join ItemMaster im on oi.ItemId = im.ItemId join CategoryMaster cm on im.CatId = cm.CatId join ItemUnit iu on oi.ItemId=iu.ItemId and oi.Unit=iu.Unit where oi.OrderId = $orderId and oi.IsDeleted=0";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
 	$orderItemList = array();
 	while($row = mysqli_fetch_assoc($query)){
 		$orderItemJson = array(
+			'orderItemId' => $row["OrderItemId"],
 			'itemName' => $row["ItemName"],
 			'catName' => $row["CatName"],
 			'size' => $row["Unit"],
 			'quantity' => $row["Quantity"],
-			'price' => $row["Price"]
+			'newQuantity' => '',
+			'price' => $row["Price"],
+			'perUnitPrice' => $row["PerUnitPrice"]
 		);
 		array_push($orderItemList, $orderItemJson);
 	}
@@ -616,6 +643,56 @@ else if($searchType == "customer"){
 		array_push($customerList, $row);
 	}
 	echo json_encode($customerList);
+}
+else if($searchType == "revenue"){
+	$filterFromDate = $jsonData->filterFromDate;
+	$filterToDate = $jsonData->filterToDate;
+	$filterPincode = $jsonData->filterPincode;
+
+	$filterSql = "";
+	if($filterFromDate != ""){
+		$filterSql .= "and `OrderDate` >= '$filterFromDate' ";
+	}
+	if($filterToDate != ""){
+		$filterSql .= "and `OrderDate` <= '$filterToDate' ";
+	}
+	if($filterPincode != ""){
+		$filterSql .= "and `Pincode`='$filterPincode' ";
+	}
+
+	$sql = "SELECT * FROM `V_TotalRevenue` where 1=1 $filterSql order by `OrderDate` desc";
+	$stmt = $conn->prepare($sql);
+	$stmt->execute();
+	$query = $stmt->get_result();
+	$revenueList = array();
+	while($row = mysqli_fetch_assoc($query)){
+		$orderDate = $row["OrderDate"];
+		$pincode = $row["Pincode"];
+
+		$sql2 = "SELECT `RestName`, `TotalPrice`, `Commission`, `DeliveryCharge`, `Revenue` FROM `V_Revenue` where `OrderDate`='$orderDate' and `Pincode`=$pincode";
+		$stmt2 = $conn->prepare($sql2);
+		$stmt2->execute();
+		$query2 = $stmt2->get_result();
+		$subRevenueList = array();
+		while($row2 = mysqli_fetch_assoc($query2)){
+			array_push($subRevenueList, $row2);
+		}
+
+		$row["subRevenueList"] = $subRevenueList;
+		array_push($revenueList, $row);
+	}
+	echo json_encode($revenueList);
+}
+else if($searchType == "restPincode"){
+	$sql = "SELECT DISTINCT `Pincode` FROM `RestaurantMaster` where `Pincode` is not null and `Approve`=1 and `Enable`=1 and `IsActive`=1";
+	$stmt = $conn->prepare($sql);
+	$stmt->execute();
+	$query = $stmt->get_result();
+	$pincodeList = array();
+	while($row = mysqli_fetch_assoc($query)){
+		array_push($pincodeList, $row["Pincode"]);
+	}
+	echo json_encode($pincodeList);
 }
 ?>
 

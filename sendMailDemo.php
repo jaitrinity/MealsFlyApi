@@ -7,7 +7,9 @@ $ccMailId = "";
 $bccMailId = "";
 
 
-$msg = "Hi";
+$msg = "Hi,
+this is jai prakash";
+$msg = nl2br($msg);
 $subject = "Cron test";
 $classObj = new SendMailClass();
 $response = $classObj->sendMail($toMailId, $ccMailId, $bccMailId, $subject, $msg, null);

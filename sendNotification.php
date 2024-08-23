@@ -1,8 +1,8 @@
 <?php 
 $appName="Restaurant";
-$tokens = "c8YMmi3ERAOvDkieonqtNg:APA91bG4OQz3ADal4CLvDIUieV4CkBDMX7vqeEIekhvOOTJRMiojY9GxmRoCcZlmqT1D_g_OelQdTtTS-M8Ns3MwuMXBmj4tKgYXGHYG6mkA50uWwQ0Ro5pGOKIuD27v6MmCvK9uJl44";
+$tokens = "cbIXC2KMT-2qk0LPGGqV41:APA91bG-RdtPIv49jb1eiblAkMIMa9dBU2q2R9gx3CJrwb1wNOY4SII1jH0ZpKtoiD-YaiD3Pzn-v3Wt43Re9BBgfOhBEKnfpy46_Vbn40MmUL9uOM-FzFBhl9HQDgrPG5Svm2oFY7qx";
 $title = "Title";
-$body = "Body";
+$body = "Body - ".$appName;
 $image = "";
 $link = "";
 $dataJson = array('orderId' => 1);
@@ -11,6 +11,7 @@ $output = array();
 require_once 'FirebaseNotificationClass.php';
 $classObj = new FirebaseNotificationClass();
 $result = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $dataJson);
+echo $result;
 $notificationResult = json_decode($result);
 $notificationStatus = $notificationResult->success;
 if($notificationStatus !=0){
