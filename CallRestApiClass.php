@@ -46,11 +46,11 @@ class CallRestApiClass{
 	}
 
 	function razorPayApi($url,$request){
-		// $username = "rzp_test_kSqbVKux7ntDNL";
-		// $password = "PBqRf3l66WzeicIpzB0RJOnV";
+		// $username = "[Test_API_KEY]";
+		// $password = "[Test_API_Pass]";
 
-		$username = "rzp_live_MWV6tDdyIWvZrt";
-		$password = "fxxgnQXL3F16DRFd4hmfuyZh";
+		$username = "[Live_API_KEY]";
+		$password = "[Live_API_Pass]";
 		$curl = curl_init();
 		curl_setopt_array($curl, array(
 		  CURLOPT_URL => $url,
