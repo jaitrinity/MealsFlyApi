@@ -3,7 +3,7 @@ class SendOtpClass{
 	function sendOtp($otp, $mobile, $appName){
 		//api for sending the otp
 		$message = "Your one time password (OTP) is ".$otp." for ".$appName." application.";
-		$apikey = "ae6fa4-5cab56-4bc26d-caa56f-b27aab";
+		$apikey = "[sms_api_key]";
 		$senderId = "TRIAPP";
 		$route = "default";
 		$st = true;

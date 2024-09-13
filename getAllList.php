@@ -8,7 +8,8 @@ $json = file_get_contents('php://input');
 $jsonData=json_decode($json);
 $searchType = $jsonData->searchType;
 if($searchType == "allRider"){
-	$sql = "SELECT `RiderId`, `Name` FROM `DeliveryBoyMaster` where `IsActive` = 1";
+	// $sql = "SELECT `RiderId`, `Name` FROM `DeliveryBoyMaster` where `IsActive` = 1";
+	$sql = "SELECT dm.RiderId, dm.Name, count(mo.RiderId) FROM DeliveryBoyMaster dm left join MyOrders mo on dm.RiderId=mo.RiderId and mo.Status=5 where dm.IsActive = 1 GROUP by dm.RiderId ORDER by count(mo.RiderId) desc";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -23,7 +24,8 @@ if($searchType == "allRider"){
 	echo json_encode($riderList);
 }
 else if($searchType == "allRestaurant"){
-	$sql = "SELECT `RestId`, `Name` FROM `RestaurantMaster` where `IsActive` = 1 order by `DisplayOrder`";
+	// $sql = "SELECT `RestId`, `Name` FROM `RestaurantMaster` where `IsActive`=1 and `Enable`=1 order by `pincode`,`DisplayOrder`";
+	$sql = "SELECT re.RestId, re.Name, count(mo.RestId) FROM RestaurantMaster re left join MyOrders mo on re.RestId=mo.RestId and mo.Status=5 where re.IsActive=1 and re.Enable=1 GROUP by re.RestId ORDER by count(mo.RestId) desc";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -518,7 +520,7 @@ else if($searchType == "restaurantItem"){
 	echo json_encode($dataList);
 }
 else if($searchType == "rider"){
-	$sql = "SELECT * FROM `DeliveryBoyMaster`";
+	$sql = "SELECT * FROM `DeliveryBoyMaster` order by `RiderId` desc";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
@@ -553,14 +555,19 @@ else if($searchType == "orders"){
 		$filterSql .= "and date_format(`OrderDatetime`,'%Y-%m-%d') <= '$filterEndDate'";
 	}
 
+	if($filterStartDate == "" && $filterEndDate == ""){
+		// $filterSql .= "and `OrderDatetime` >= now()-interval 3 month";
+	}
+
 	
-	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State) as DeliveryAddress, cm.Contact as DeliveryMobile, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg, mo.RiderId, dm.Name as RiderName, dm.Mobile as RiderMobile FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status left join DeliveryBoyMaster dm on mo.RiderId=dm.RiderId where mo.Status != 7 $filterSql ORDER BY mo.OrderId  DESC";
+	$sql = "SELECT mo.OrderId, rm.Name as RestName, cm.Name as CustName, c.Mobile, concat(cm.Name,', ',cm.Address,', ', cm.City,', ',cm.Pincode, ', ', cm.State) as DeliveryAddress, cm.Contact as DeliveryMobile, mo.PaymentMode, mo.Instruction, mo.TotalPrice, mo.DeliveryCharge, mo.GrandTotal, mo.Status, os.StatusTxt, os.StatusColor, date_format(mo.OrderDatetime,'%d-%b-%Y %H:%i') as OrderDatetime, mo.CancellationMsg, mo.RiderId, dm.Name as RiderName, dm.Mobile as RiderMobile, mo.SelfAccept FROM MyOrders mo join CustomerMaster c on mo.CustId=c.CustId join CustomerAddress cm on mo.CustAddId = cm.CustAddId join RestaurantMaster rm on mo.RestId = rm.RestId join OrderStatus os on mo.Status = os.Status left join DeliveryBoyMaster dm on mo.RiderId=dm.RiderId where mo.Status != 7 $filterSql ORDER BY mo.OrderId  DESC";
 	$stmt = $conn->prepare($sql);
 	$stmt->execute();
 	$query = $stmt->get_result();
 	$orderList = array();
 	while($row = mysqli_fetch_assoc($query)){
 		$riderId = $row["RiderId"];
+		$selfPickUp = $row["SelfAccept"];
 		$riderInfo = "";
 		if($riderId !=0){
 			$riderInfo = $row["RiderName"]." : ".$row["RiderMobile"];
@@ -585,7 +592,8 @@ else if($searchType == "orders"){
 			'riderId' => $row["RiderId"],
 			'riderName' => $row["RiderName"] == null ? "" : $row["RiderName"],
 			'riderMobile' => $row["RiderMobile"] == null ? "" : $row["RiderMobile"],
-			'riderInfo' => $riderInfo
+			'riderInfo' => $riderInfo,
+			'selfPickUp' => $selfPickUp == 1 ? "Self" : ""
 		);
 		array_push($orderList, $orderJson);
 	}
@@ -652,6 +660,9 @@ else if($searchType == "revenue"){
 	$filterSql = "";
 	if($filterFromDate != ""){
 		$filterSql .= "and `OrderDate` >= '$filterFromDate' ";
+	}
+	else{
+		$filterSql .= "and `OrderDate` >= date(now()-interval 3 month) ";
 	}
 	if($filterToDate != ""){
 		$filterSql .= "and `OrderDate` <= '$filterToDate' ";

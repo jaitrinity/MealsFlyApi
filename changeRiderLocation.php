@@ -5,6 +5,7 @@ if($methodType != "POST"){
 	return;
 }
 $json = file_get_contents('php://input');
+file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/changeRiderLocation_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
 $jsonData=json_decode($json);
 $riderId = $jsonData->riderId;
 $currentLatlong = $jsonData->currentLatlong;

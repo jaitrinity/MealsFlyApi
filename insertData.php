@@ -31,6 +31,47 @@ if($insertType == "addCategory"){
 	$output = array('code' => $code, 'message' => $message);
 	echo json_encode($output);
 }
+else if($insertType == "addCategoryNew"){
+	$restId = $jsonData->restId;
+	$category = $jsonData->category;
+	$oldCategory = $jsonData->oldCategory;
+	$imageBase64 = $jsonData->imageBase64;
+	$updateImg = "";
+	if($imageBase64 !=""){
+		$t=time();
+		$base64 = new Base64ToAny();
+		$imageBase64 = $base64->base64_to_jpeg($imageBase64,$t.'_Image');
+
+		$updateImg .= ", `Image`='$imageBase64'";
+	}
+
+	$sql = "SELECT `CatId` FROM `CategoryMaster` where `RestId`=$restId and `Name`='$oldCategory' and `IsActive`=1";
+	$stmt = $conn->prepare($sql);
+	$stmt->execute();
+	$query = $stmt->get_result();
+	$rowCount = mysqli_num_rows($query);
+	if($rowCount == 0){
+		$type = "insert";
+		$sql = "INSERT INTO `CategoryMaster`(`RestId`, `Name`, `Image`) VALUES ($restId, '$category', '$imageBase64')";
+	}
+	else{
+		$type = "update";
+		$sql = "UPDATE `CategoryMaster` set `Name`='$category' $updateImg where `RestId`=$restId and `Name`='$oldCategory'";
+	}
+	$stmt = $conn->prepare($sql);
+	$code = 0;
+	$message = "";
+	if($stmt->execute()){
+		$code = 200;
+		$message =  "Successfully $type";
+	}
+	else{
+		$code = 0;
+		$message = "Something went wrong";
+	}
+	$output = array('code' => $code, 'message' => $message);
+	echo json_encode($output);
+}
 else if($insertType == "addRider"){
 	$name = $jsonData->name;
 	$mobile = $jsonData->mobile;
@@ -166,5 +207,155 @@ else if($insertType == "restaurant"){
 	echo json_encode($output);
 
 
+}
+else if($insertType == "importItem"){
+	$restId = $jsonData->restId;
+	$importData = $jsonData->importData;
+	for($i=0;$i<count($importData);$i++){
+		$itemObj = $importData[$i];
+		$tableColumn = "";
+		$tableData = "";
+		foreach ($itemObj as $key => $value) {
+			$tableColumn .= "`".$key."`,";
+			$value = str_replace("'", "\'", $value);
+			$tableData .= "'".$value."',";
+		}
+
+		$tableColumn .= "`RestId`";
+		$tableData .= "$restId";
+
+		$insertSql = "INSERT into `ImportItems` ($tableColumn) values ($tableData) ";
+		$query=mysqli_query($conn,$insertSql);
+	}
+
+	$sql = "SELECT * FROM `ImportItems` where `IsDeleted`=0";
+	$stmt = $conn->prepare($sql);
+	$stmt->execute();
+	$query = $stmt->get_result();
+	$rowCount = mysqli_num_rows($query);
+	$successArr = array();
+	$failArr = array();
+	while($row = mysqli_fetch_assoc($query)){
+		$defaultImg = "https://www.trinityapplab.in/MealsFly/logo/rest3.png";
+		$restId = $row["RestId"];
+		$category = $row["Category"];
+
+		$sql2 = "SELECT `CatId` FROM `CategoryMaster` where `RestId`=$restId and `Name`='$category' and `IsActive`=1";
+		$result2 = mysqli_query($conn,$sql2);
+		$rowCount2 = mysqli_num_rows($result2);
+		if($rowCount2 == 0){
+			$insCat = "INSERT INTO `CategoryMaster`(`RestId`, `Name`, `Image`) VALUES ($restId, '$category','$defaultImg')";
+			$insCatStmt = $conn->prepare($insCat);
+			if($insCatStmt->execute()){
+				$catId = $conn->insert_id;
+			}
+
+		}
+		else{
+			$row2 = mysqli_fetch_assoc($result2);
+			$catId = $row2["CatId"];
+		}
+
+		$itemName = $row["ItemName"];
+		$unitList = array();
+		$quantity = $row["Quantity"];
+		$unitObj = array('title' => 'Quantity', 'price' => $quantity);
+		array_push($unitList, $unitObj);
+
+		$half = $row["Half"];
+		$unitObj = array('title' => 'Half', 'price' => $half);
+		array_push($unitList, $unitObj);
+
+		$full = $row["Full"];
+		$unitObj = array('title' => 'Full', 'price' => $full);
+		array_push($unitList, $unitObj);
+
+		$gram200 = $row["200Gram"];
+		$unitObj = array('title' => '200Gram', 'price' => $gram200);
+		array_push($unitList, $unitObj);
+
+		$gram500 = $row["500Gram"];
+		$unitObj = array('title' => '500Gram', 'price' => $gram500);
+		array_push($unitList, $unitObj);
+
+		$kg1 = $row["1KG"];
+		$unitObj = array('title' => '1KG', 'price' => $kg1);
+		array_push($unitList, $unitObj);
+
+		$gram1500 = $row["1.5KG"];
+		$unitObj = array('title' => '1.5KG', 'price' => $gram1500);
+		array_push($unitList, $unitObj);
+
+		$kg2 = $row["2KG"];
+		$unitObj = array('title' => '2KG', 'price' => $kg2);
+		array_push($unitList, $unitObj);
+
+		$ml100 = $row["100ML"];
+		$unitObj = array('title' => '100ML', 'price' => $ml100);
+		array_push($unitList, $unitObj);
+
+		$ml500 = $row["500ML"];
+		$unitObj = array('title' => '500ML', 'price' => $ml500);
+		array_push($unitList, $unitObj);
+
+		$l1 = $row["1L"];
+		$unitObj = array('title' => '1L', 'price' => $l1);
+		array_push($unitList, $unitObj);
+
+		$small = $row["Small"];
+		$unitObj = array('title' => 'Small', 'price' => $small);
+		array_push($unitList, $unitObj);
+
+		$large = $row["Large"];
+		$unitObj = array('title' => 'Large', 'price' => $large);
+		array_push($unitList, $unitObj);
+
+		$customize = 0;
+		if($half !=0 || $full !=0) $customize = 1;
+		else if($gram200 !=0 || $gram500 !=0 || $kg1 !=0 || $gram1500 !=0 || $kg2 !=0) $customize=2;
+		else if($ml100 !=0 || $ml500 !=0 || $l1 !=0) $customize=3;
+		else if($small !=0 || $large !=0) $customize=4;
+
+		$sql3 = "INSERT INTO `ItemMaster`(`RestId`, `CatId`, `Name`, `Image`, `Customize`) VALUES ($restId, $catId, '$itemName', '$defaultImg', $customize)";
+		$stmt3 = $conn->prepare($sql3);
+		if($stmt3->execute()){
+			$itemId = $conn->insert_id;
+			for($j=0;$j<count($unitList);$j++){
+				$unitObj = $unitList[$j];
+				$unit = $unitObj["title"];
+				$price = $unitObj["price"];
+				if($price !=0){
+					$unitSql = "INSERT INTO `ItemUnit`(`ItemId`, `Unit`, `Price`) VALUES ($itemId, '$unit', $price)";
+					$unitStmt = $conn->prepare($unitSql);
+					if($unitStmt->execute()){
+
+					}
+				}	
+			}
+			array_push($successArr, $itemName);
+		}
+		else{
+			array_push($failArr, $itemName);
+		}
+	}
+
+	$code = 0;
+	$message = "";
+	if(count($successArr) == $rowCount){
+		// $trunSql = "TRUNCATE `ImportItems`";
+		$trunSql = "UPDATE `ImportItems` set `IsDeleted`=1";
+		$trunStmt = $conn->prepare($trunSql);
+		$trunStmt->execute();
+
+		$code = 200;
+		$message =  "Successfully imported";
+	}
+
+	$output = array(
+		'code' => $code, 'message' => $message, 
+		'restId' => $restId, 'importData' => $importData, 'successArr' => $successArr, 'failArr' => $failArr
+	);
+	echo json_encode($output);
+	file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/ImportItems_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($output)."\n", FILE_APPEND);
 }
 ?>
