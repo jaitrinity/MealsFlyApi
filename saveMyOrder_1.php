@@ -5,7 +5,8 @@ if($methodType != "POST"){
 	return;
 }
 $json = file_get_contents('php://input');
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/log_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
+$logFilePath = '/var/www/trinityapplab.in/html/MealsFly/log/log1_';
+file_put_contents($logFilePath.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
 $jsonData = json_decode($json);
 
 $restId = $jsonData->restId;
@@ -112,9 +113,12 @@ if($message == ""){
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'FirebaseNotificationClass.php';
-			$classObj = new FirebaseNotificationClass();
-			$notiResult = $classObj->sendNotificationNew($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			require_once 'CallRestApiClass.php';
+			$classObj = new CallRestApiClass();
+			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $tokens);
+			$request = json_encode($request);
+			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$tokens','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -132,8 +136,7 @@ if($message == ""){
 				while($row2 = mysqli_fetch_assoc($result2)){
 					array_push($tokenList, $row2["Token"]);
 				}
-				$tokens = implode(",", $tokenList);
-				$title = "";
+				$title = "New Order";
 				$body = "New order ! You have recieved a new order on mealsfly";
 				$image = "";
 				$link = "";
@@ -172,14 +175,19 @@ if($message == ""){
 					);
 
 					$appName = "Restaurant";
-					require_once 'FirebaseNotificationClass.php';
-					$classObj = new FirebaseNotificationClass();
-					$notiResult = $classObj->sendNotificationNew($appName, $tokens, $title, $body, $image, $link, $orderJson);
-					$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Restaurant-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Restaurant-\n','$tokens','\n') where `OrderId` = $orderId";
-					// echo $notiSql;
-					$notiStmt = $conn->prepare($notiSql);
-					$notiStmt->bind_param("s", $notiResult);
-					$notiStmt->execute();
+					require_once 'CallRestApiClass.php';
+					$classObj = new CallRestApiClass();
+					for($i=0;$i<count($tokenList);$i++){
+						$token = $tokenList[$i];
+						$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
+						$request = json_encode($request);
+						$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+						$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Restaurant-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Restaurant-\n','$token','\n') where `OrderId` = $orderId";
+						// echo $notiSql;
+						$notiStmt = $conn->prepare($notiSql);
+						$notiStmt->bind_param("s", $notiResult);
+						$notiStmt->execute();
+					}
 					
 				}	
 			}
@@ -199,5 +207,5 @@ else{
 $output = array('orderId' => $orderId, 'code' => $code, 'message' => $message);
 echo json_encode($output);
 
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/log_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($output)."\n", FILE_APPEND);
+file_put_contents($logFilePath.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($output)."\n", FILE_APPEND);
 ?>

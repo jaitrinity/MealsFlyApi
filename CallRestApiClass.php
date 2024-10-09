@@ -45,6 +45,41 @@ class CallRestApiClass{
 		return $response;
 	}
 
+	function callPostApiForSendNotification($appName, $request){
+
+		$url = "http://www.in3.co.in:8080";
+		if($appName == "Customer"){
+			$url .= "/CustomerApp/notification/token";
+		}
+		else if($appName == "Restaurant"){
+			$url .= "/RestaurantApp/notification/token";
+		}
+		else if($appName == "Rider"){
+			$url .= "/RiderApp/notification/token";
+		}
+		$curl = curl_init();
+
+		curl_setopt_array($curl, array(
+		  CURLOPT_URL => $url,
+		  CURLOPT_RETURNTRANSFER => true,
+		  CURLOPT_ENCODING => '',
+		  CURLOPT_MAXREDIRS => 10,
+		  CURLOPT_TIMEOUT => 0,
+		  CURLOPT_FOLLOWLOCATION => true,
+		  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+		  CURLOPT_CUSTOMREQUEST => 'POST',
+		  CURLOPT_POSTFIELDS =>$request,
+		  CURLOPT_HTTPHEADER => array(
+		    'Content-Type: application/json'
+		  ),
+		));
+
+		$response = curl_exec($curl);
+
+		curl_close($curl);
+		return $response;
+	}
+
 	function razorPayApi($url,$request){
 		// $username = "[Test_API_KEY]";
 		// $password = "[Test_API_Pass]";

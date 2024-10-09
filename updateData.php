@@ -181,6 +181,7 @@ else if($updateType == "editRider"){
 	$aadharBase64 = $jsonData->aadharBase64;
 	$panNo = $jsonData->panNo;
 	$panBase64 = $jsonData->panBase64;
+	$riderLatLong = $jsonData->riderLatLong;
 	$moreUpdate = "";
 	if($aadharBase64 != ""){
 		$aadhar = $base64->base64_to_jpeg($aadharBase64,$t.'_Aadhar');
@@ -191,7 +192,9 @@ else if($updateType == "editRider"){
 		$moreUpdate .= ", `PanPic` = '$pan'";
 	}
 
-	$sql = "UPDATE `DeliveryBoyMaster` set `Name` = '$name', `Mobile` = '$mobile', `AadharNo` = '$aadharNo', `PanNo` = '$panNo' $moreUpdate where `RiderId` = $riderId";
+	$riderLatLong = str_replace(" ", "", $riderLatLong);
+
+	$sql = "UPDATE `DeliveryBoyMaster` set `Name` = '$name', `Mobile` = '$mobile', `AadharNo` = '$aadharNo', `PanNo` = '$panNo', `CurrentLatlong`='$riderLatLong' $moreUpdate , `UpdateDate`=current_timestamp where `RiderId` = $riderId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";

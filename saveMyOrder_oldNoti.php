@@ -45,7 +45,7 @@ if($paymentStatus == 0){
 // 	$status = 5;
 // }
 $itemList = $jsonData->itemList;
-$sql = "INSERT INTO `MyOrders`(`RestId`, `CustId`, `TotalPrice`, `DeliveryCharge`, `GrandTotal`, `CustAddId`, `PaymentMode`, `PaymentId`, `PaymentStatus`, `Instruction`, `Status`, `SelfAccept`, `Tokens`, `NotificationResponse`) VALUES ($restId, $custId, $totalPrice, $deliveryCharge, $grandTotal, $custAddId, '$paymentMode', '$paymentId', $paymentStatus, '$instruction', $status, $selfAccept,' ',' ')";
+$sql = "INSERT INTO `MyOrders`(`RestId`, `CustId`, `TotalPrice`, `DeliveryCharge`, `GrandTotal`, `CustAddId`, `PaymentMode`, `PaymentId`, `PaymentStatus`, `Instruction`, `Status`, `SelfAccept`) VALUES ($restId, $custId, $totalPrice, $deliveryCharge, $grandTotal, $custAddId, '$paymentMode', '$paymentId', $paymentStatus, '$instruction', $status, $selfAccept)";
 $stmt = $conn->prepare($sql);
 $message = "";
 $orderIdList = array();
@@ -114,11 +114,11 @@ if($message == ""){
 			$appName = "Customer";
 			require_once 'FirebaseNotificationClass.php';
 			$classObj = new FirebaseNotificationClass();
-			$notiResult = $classObj->sendNotificationNew($appName, $tokens, $title, $body, $image, $link, $orderJson);
-			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$tokens','\n') where `OrderId` = $orderId";
-			// echo $notiSql;
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
-			$notiStmt->bind_param("s", $notiResult);
 			$notiStmt->execute();
 		}
 
@@ -168,18 +168,17 @@ if($message == ""){
 						'paymentMode' => $row3["PaymentMode"],
 						'instruction' => $row3["Instruction"],
 						'status' => $row3["Status"],
-						// 'orderItemList' => $orderItemList
+						'orderItemList' => $orderItemList
 					);
 
 					$appName = "Restaurant";
 					require_once 'FirebaseNotificationClass.php';
 					$classObj = new FirebaseNotificationClass();
-					$notiResult = $classObj->sendNotificationNew($appName, $tokens, $title, $body, $image, $link, $orderJson);
-					$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Restaurant-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Restaurant-\n','$tokens','\n') where `OrderId` = $orderId";
-					// echo $notiSql;
+					$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+					$notificationResult = json_decode($notiResult);
+					$notificationStatus = $notificationResult->success;
+					$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 					$notiStmt = $conn->prepare($notiSql);
-					$notiStmt->bind_param("s", $notiResult);
-					$notiStmt->execute();
 					
 				}	
 			}

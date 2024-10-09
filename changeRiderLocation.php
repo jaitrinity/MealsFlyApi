@@ -9,7 +9,7 @@ file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/changeRiderLocati
 $jsonData=json_decode($json);
 $riderId = $jsonData->riderId;
 $currentLatlong = $jsonData->currentLatlong;
-$sql = "UPDATE `DeliveryBoyMaster` set `CurrentLatlong` = ? where `RiderId` = ?";
+$sql = "UPDATE `DeliveryBoyMaster` set `CurrentLatlong` = ?, `LastLatLongUpdateDateTime`=current_timestamp where `RiderId` = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("si", $currentLatlong, $riderId);
 $code = 0;

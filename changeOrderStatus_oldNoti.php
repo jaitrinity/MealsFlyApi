@@ -144,6 +144,7 @@ if($code == 200){
 	// Preparing
 	if($status == 2 && $selfPickup == 0){
 		// Get Rider device token
+		// $sql = "SELECT d.Token from (SELECT rm.Latitude, rm.Longitude, dm.RiderId, dm.Latitude as RiderLat, dm.Longitude as RiderLong, ST_Distance_Sphere(point(rm.Latitude, rm.Longitude), point(dm.Latitude, dm.Longitude)) Distance FROM MyOrders mo join RestaurantMaster rm on mo.RestId=rm.RestId, DeliveryBoyMaster dm where mo.OrderId=$orderId and dm.IsActive=1 and dm.Status=1 and dm.CurrentLatlong is not null) t join Device d on t.RiderId=d.UserId and d.AppName=3 where t.Distance < 300";
 
 		$sql = "SELECT d.Token from (SELECT rm.Latitude, rm.Longitude, dm.RiderId, dm.Latitude as RiderLat, dm.Longitude as RiderLong, ST_Distance_Sphere(point(rm.Latitude, rm.Longitude), point(dm.Latitude, dm.Longitude)) Distance, getPartnerToRiderDistance() as DistRange FROM MyOrders mo join RestaurantMaster rm on mo.RestId=rm.RestId, DeliveryBoyMaster dm where mo.OrderId=$orderId and dm.IsActive=1 and dm.Status=1 and dm.CurrentLatlong is not null) t join Device d on t.RiderId=d.UserId and d.AppName=3 where t.Distance < t.DistRange";
 
@@ -154,6 +155,7 @@ if($code == 200){
 			while($row = mysqli_fetch_assoc($result)){
 				array_push($tokenList, $row["Token"]);
 			}
+			$tokens = implode(",", $tokenList);
 			$title = "";
 			$body = "Deliver now ! New order received";
 			$image = "";
@@ -192,24 +194,27 @@ if($code == 200){
 					'paymentMode' => $row1["PaymentMode"],
 					'instruction' => $row1["Instruction"],
 					'status' => $row1["Status"],
-					// 'orderItemList' => $orderItemList
+					'orderItemList' => $orderItemList
 				);
 			}
 
 			$appName = "Rider";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			for($i=0;$i<count($tokenList);$i++){
-				$token = $tokenList[$i];
-				$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-				$request = json_encode($request);
-				$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-				$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Rider-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Rider-\n','$token','\n') where `OrderId` = $orderId";
-				// echo $notiSql;
-				$notiStmt = $conn->prepare($notiSql);
-				$notiStmt->bind_param("s", $notiResult);
-				$notiStmt->execute();
-			}	
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			// $notificationResult = json_decode($notiResult);
+			// $notificationStatus = $notificationResult->success;
+			// if($notificationStatus !=0){
+			// 	$output = array('status' => 'success', 'message' => 'Successfully send');
+			// }
+			// else{
+			// 	$output = array('status' => 'fail', 'message' => 'Something went wrong');
+			// }
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
+			$notiStmt = $conn->prepare($notiSql);
+			$notiStmt->execute();
 		}
 	}
 	// Preparing
@@ -218,24 +223,25 @@ if($code == 200){
 		$result = mysqli_query($conn,$sql);
 		$rowCount =mysqli_num_rows($result);
 		if($rowCount != 0){
+			$tokenList = [];
 			$row = mysqli_fetch_assoc($result);
 			$restName = $row["RestName"];
 			$token = $row["Token"];
+			array_push($tokenList, $token);
+			$tokens = implode(",", $tokenList);
 			$title = "";
 			$body = "Your order has accepted by $restName, on the way to kitchen";
 			$image = "";
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
-			// echo $notiSql;
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
-			$notiStmt->bind_param("s", $notiResult);
 			$notiStmt->execute();
 		}
 	}
@@ -246,23 +252,24 @@ if($code == 200){
 		$result = mysqli_query($conn,$sql);
 		$rowCount =mysqli_num_rows($result);
 		if($rowCount != 0){
+			$tokenList = [];
 			$row = mysqli_fetch_assoc($result);
 			$token = $row["Token"];
+			array_push($tokenList, $token);
+			$tokens = implode(",", $tokenList);
 			$title = "";
 			$body = "Yeah ! Your order is Ready, will be picked up soon";
 			$image = "";
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
-			// echo $notiSql;
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
-			$notiStmt->bind_param("s", $notiResult);
 			$notiStmt->execute();
 		}
 	}
@@ -272,23 +279,24 @@ if($code == 200){
 		$result = mysqli_query($conn,$sql);
 		$rowCount =mysqli_num_rows($result);
 		if($rowCount != 0){
+			$tokenList = [];
 			$row = mysqli_fetch_assoc($result);
 			$token = $row["Token"];
+			array_push($tokenList, $token);
+			$tokens = implode(",", $tokenList);
 			$title = "";
 			$body = "Your order has been successfully picked up by the delivery person. For more details, Track in my orders";
 			$image = "";
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
-			// echo $notiSql;
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
-			$notiStmt->bind_param("s", $notiResult);
 			$notiStmt->execute();
 		}
 	}
@@ -298,23 +306,24 @@ if($code == 200){
 		$result = mysqli_query($conn,$sql);
 		$rowCount =mysqli_num_rows($result);
 		if($rowCount != 0){
+			$tokenList = [];
 			$row = mysqli_fetch_assoc($result);
 			$token = $row["Token"];
+			array_push($tokenList, $token);
+			$tokens = implode(",", $tokenList);
 			$title = "";
 			$body = "Delivered to you ! Enjoy the food , thanks for choosing mealsfly as delivery partner";
 			$image = "";
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
-			// echo $notiSql;
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
-			$notiStmt->bind_param("s", $notiResult);
 			$notiStmt->execute();
 		}
 	}
@@ -326,10 +335,13 @@ if($code == 200){
 		$result = mysqli_query($conn,$sql);
 		$rowCount =mysqli_num_rows($result);
 		if($rowCount != 0){
+			$tokenList = [];
 			$row = mysqli_fetch_assoc($result);
 			$custName = $row["Name"];
 			$totalPrice = $row["TotalPrice"];
 			$token = $row["Token"];
+			array_push($tokenList, $token);
+			$tokens = implode(",", $tokenList);
 			$title = "Order ".$statusTxt;
 			$body = "Hi $custName, your order is $statusTxt of ₹ $totalPrice";
 			$image = "";
@@ -337,15 +349,13 @@ if($code == 200){
 
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $tokens);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
-			// echo $notiSql;
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notificationResult = json_decode($notiResult);
+			$notificationStatus = $notificationResult->success;
+			$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 			$notiStmt = $conn->prepare($notiSql);
-			$notiStmt->bind_param("s", $notiResult);
 			$notiStmt->execute();
 		}
 	}
@@ -361,6 +371,7 @@ if($code == 200){
 				while($row = mysqli_fetch_assoc($result)){
 					array_push($tokenList, $row["Token"]);
 				}
+				$tokens = implode(",", $tokenList);
 				$title = "Order ready";
 				$body = "Order ready for pickup, please reach restaurant location as soon as possible.";
 				$image = "";
@@ -368,19 +379,14 @@ if($code == 200){
 
 				$orderJson = new StdClass;
 				$appName = "Rider";
-				require_once 'CallRestApiClass.php';
-				$classObj = new CallRestApiClass();
-				for($i=0;$i<count($tokenList);$i++){
-					$token = $tokenList[$i];
-					$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-					$request = json_encode($request);
-					$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-					$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Rider-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Rider-\n','$token','\n') where `OrderId` = $orderId";
-					// echo $notiSql;
-					$notiStmt = $conn->prepare($notiSql);
-					$notiStmt->bind_param("s", $notiResult);
-					$notiStmt->execute();
-				}
+				require_once 'FirebaseNotificationClass.php';
+				$classObj = new FirebaseNotificationClass();
+				$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+				$notificationResult = json_decode($notiResult);
+				$notificationStatus = $notificationResult->success;
+				$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
+				$notiStmt = $conn->prepare($notiSql);
+				$notiStmt->execute();
 			}
 		}
 		else{
@@ -389,23 +395,24 @@ if($code == 200){
 			$result = mysqli_query($conn,$sql);
 			$rowCount =mysqli_num_rows($result);
 			if($rowCount != 0){
+				$tokenList = [];
 				$row = mysqli_fetch_assoc($result);
 				$token = $row["Token"];
+				array_push($tokenList, $token);
+				$tokens = implode(",", $tokenList);
 				$title = "Order ready";
 				$body = "Order ready for pickup, please reach restaurant location as soon as possible.";
 				$image = "";
 				$link = "";
 				$orderJson = new StdClass;
 				$appName = "Customer";
-				require_once 'CallRestApiClass.php';
-				$classObj = new CallRestApiClass();
-				$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-				$request = json_encode($request);
-				$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
-				$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
-				// echo $notiSql;
+				require_once 'FirebaseNotificationClass.php';
+				$classObj = new FirebaseNotificationClass();
+				$notiResult = $classObj->sendNotification($appName, $tokens, $title, $body, $image, $link, $orderJson);
+				$notificationResult = json_decode($notiResult);
+				$notificationStatus = $notificationResult->success;
+				$notiSql = "UPDATE `MyOrders` set `IsSendNotification`=$notificationStatus, `Tokens`='$tokens' where `OrderId` = $orderId";
 				$notiStmt = $conn->prepare($notiSql);
-				$notiStmt->bind_param("s", $notiResult);
 				$notiStmt->execute();
 			}
 		}

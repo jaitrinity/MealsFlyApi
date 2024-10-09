@@ -3,6 +3,8 @@ include("dbConfiguration.php");
 require 'SendMailClass.php';
 
 $toMailId = "ordersalertmealsfly@gmail.com";
+// $toMailId = "jai.prakash@trinityapplab.co.in";
+// $ccMailId = "pushkar.tyagi@trinityapplab.co.in";
 $ccMailId = "";
 $bccMailId = "";
 $greeting = "Dear Mealsfly Admin,<br><br>";
@@ -10,7 +12,7 @@ $regard = "Regards,<br>";
 $regard .= "Trinity automation team...<br>";
 
 // Order not accepted by restaurant till 3 minute
-$sql1="SELECT t.OrderId, rm.Name as RestName, rm.Mobile as RestMobile, ca.Name as CustName, t.OrderDatetime from( SELECT *, TIMESTAMPDIFF(Minute,`OrderDatetime`,CURRENT_TIMESTAMP) as `MinuteDiff` FROM `MyOrders` where `RestId` not in (22,40) and `Status` = 1) t join RestaurantMaster rm on t.RestId = rm.RestId join CustomerAddress ca on t.CustAddId = ca.CustAddId where t.MinuteDiff >= 3";
+$sql1="SELECT t.OrderId, rm.Name as RestName, rm.Mobile as RestMobile, ca.Name as CustName, t.OrderDatetime from( SELECT *, TIMESTAMPDIFF(Minute,`OrderDatetime`,CURRENT_TIMESTAMP) as `MinuteDiff` FROM `MyOrders` where `Status` = 1) t join RestaurantMaster rm on t.RestId = rm.RestId join CustomerAddress ca on t.CustAddId = ca.CustAddId where t.MinuteDiff >= 3";
 $stmt1 = $conn->prepare($sql1);
 $stmt1->execute();
 $query1 = $stmt1->get_result();
@@ -60,7 +62,7 @@ if(mysqli_num_rows($query1) !=0 ){
 }
 
 // Order not pickup by rider till 25 minute
-$sql2 = "SELECT t.OrderId, rm.Name as RestName, ca.Name as CustName, t.OrderDatetime, dm.Name as RiderName, dm.Mobile as RiderMobile from( SELECT *, TIMESTAMPDIFF(Minute,`ReadyDatetime`,CURRENT_TIMESTAMP) as `MinuteDiff` FROM `MyOrders` where `RestId` not in (22,40) and `Status` = 3) t join RestaurantMaster rm on t.RestId = rm.RestId join CustomerAddress ca on t.CustAddId = ca.CustAddId join DeliveryBoyMaster dm on t.RiderId = dm.RiderId where t.MinuteDiff >= 25";
+$sql2 = "SELECT t.OrderId, rm.Name as RestName, ca.Name as CustName, t.OrderDatetime, dm.Name as RiderName, dm.Mobile as RiderMobile from( SELECT *, TIMESTAMPDIFF(Minute,`ReadyDatetime`,CURRENT_TIMESTAMP) as `MinuteDiff` FROM `MyOrders` where `Status` = 3) t join RestaurantMaster rm on t.RestId = rm.RestId join CustomerAddress ca on t.CustAddId = ca.CustAddId join DeliveryBoyMaster dm on t.RiderId = dm.RiderId where t.MinuteDiff >= 25";
 $stmt2 = $conn->prepare($sql2);
 $stmt2->execute();
 $query2 = $stmt2->get_result();
@@ -69,6 +71,8 @@ $msg2 .= "Following order is pending for pickup:<br><br>";
 $response2 = "B-";
 while($row2 = mysqli_fetch_assoc($query2)){
 	$orderId = $row2["OrderId"];
+	// $restName = $row2["RestName"];
+	// $custName = $row2["CustName"];
 	$orderDatetime = $row2["OrderDatetime"];
 	$orderDatetime = date("d-M-Y H:i:s", strtotime($orderDatetime));
 	$riderName = $row2["RiderName"];
@@ -112,8 +116,11 @@ if(mysqli_num_rows($query2) !=0 ){
 }
 
 
+// Rider not allocated to order
+// $sql3="SELECT mo.OrderId, ca.Name as CustName, ca.Contact as CustContact, mo.OrderDatetime FROM MyOrders mo join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.Status = 2 and mo.OrderAcceptDatetime is null";
+
 // Rider not allocated to order till 15 minutes
-$sql3="SELECT t.* from (SELECT mo.OrderId, ca.Name as CustName, ca.Contact as CustContact, mo.OrderDatetime, TIMESTAMPDIFF(Minute,mo.PreparingDatetime,CURRENT_TIMESTAMP) as MinuteDiff FROM MyOrders mo join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.RestId not in (22,40) and mo.Status in (2,3) and mo.OrderAcceptDatetime is null) t where t.MinuteDiff >= 15";
+$sql3="SELECT t.* from (SELECT mo.OrderId, ca.Name as CustName, ca.Contact as CustContact, mo.OrderDatetime, TIMESTAMPDIFF(Minute,mo.PreparingDatetime,CURRENT_TIMESTAMP) as MinuteDiff FROM MyOrders mo join CustomerAddress ca on mo.CustAddId = ca.CustAddId where mo.Status in (2,3) and mo.OrderAcceptDatetime is null) t where t.MinuteDiff >= 15";
 $stmt3 = $conn->prepare($sql3);
 $stmt3->execute();
 $query3 = $stmt3->get_result();

@@ -5,11 +5,14 @@ if($methodType != "POST"){
 	return;
 }
 $json = file_get_contents('php://input');
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/changeOrderStatus_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
+file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/changeOrderStatus_1_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
 $jsonData=json_decode($json);
 
 $orderId = $jsonData->orderId;
 $status = $jsonData->status;
+$token = $jsonData->token;
+// $deviceToken = $token->deviceToken;
+$fcmToken = $token->fcmToken;
 $selfPickup = 0;
 $sql = "";
 $code = 0;
@@ -144,6 +147,7 @@ if($code == 200){
 	// Preparing
 	if($status == 2 && $selfPickup == 0){
 		// Get Rider device token
+		// $sql = "SELECT d.Token from (SELECT rm.Latitude, rm.Longitude, dm.RiderId, dm.Latitude as RiderLat, dm.Longitude as RiderLong, ST_Distance_Sphere(point(rm.Latitude, rm.Longitude), point(dm.Latitude, dm.Longitude)) Distance FROM MyOrders mo join RestaurantMaster rm on mo.RestId=rm.RestId, DeliveryBoyMaster dm where mo.OrderId=$orderId and dm.IsActive=1 and dm.Status=1 and dm.CurrentLatlong is not null) t join Device d on t.RiderId=d.UserId and d.AppName=3 where t.Distance < 300";
 
 		$sql = "SELECT d.Token from (SELECT rm.Latitude, rm.Longitude, dm.RiderId, dm.Latitude as RiderLat, dm.Longitude as RiderLong, ST_Distance_Sphere(point(rm.Latitude, rm.Longitude), point(dm.Latitude, dm.Longitude)) Distance, getPartnerToRiderDistance() as DistRange FROM MyOrders mo join RestaurantMaster rm on mo.RestId=rm.RestId, DeliveryBoyMaster dm where mo.OrderId=$orderId and dm.IsActive=1 and dm.Status=1 and dm.CurrentLatlong is not null) t join Device d on t.RiderId=d.UserId and d.AppName=3 where t.Distance < t.DistRange";
 
@@ -197,13 +201,11 @@ if($code == 200){
 			}
 
 			$appName = "Rider";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
 			for($i=0;$i<count($tokenList);$i++){
 				$token = $tokenList[$i];
-				$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-				$request = json_encode($request);
-				$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+				$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 				$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Rider-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Rider-\n','$token','\n') where `OrderId` = $orderId";
 				// echo $notiSql;
 				$notiStmt = $conn->prepare($notiSql);
@@ -227,11 +229,9 @@ if($code == 200){
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -254,11 +254,9 @@ if($code == 200){
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -280,11 +278,9 @@ if($code == 200){
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -306,11 +302,9 @@ if($code == 200){
 			$link = "";
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -337,11 +331,9 @@ if($code == 200){
 
 			$orderJson = new StdClass;
 			$appName = "Customer";
-			require_once 'CallRestApiClass.php';
-			$classObj = new CallRestApiClass();
-			$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $tokens);
-			$request = json_encode($request);
-			$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+			require_once 'FirebaseNotificationClass.php';
+			$classObj = new FirebaseNotificationClass();
+			$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -368,13 +360,11 @@ if($code == 200){
 
 				$orderJson = new StdClass;
 				$appName = "Rider";
-				require_once 'CallRestApiClass.php';
-				$classObj = new CallRestApiClass();
+				require_once 'FirebaseNotificationClass.php';
+				$classObj = new FirebaseNotificationClass();
 				for($i=0;$i<count($tokenList);$i++){
 					$token = $tokenList[$i];
-					$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-					$request = json_encode($request);
-					$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+					$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 					$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Rider-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Rider-\n','$token','\n') where `OrderId` = $orderId";
 					// echo $notiSql;
 					$notiStmt = $conn->prepare($notiSql);
@@ -397,11 +387,9 @@ if($code == 200){
 				$link = "";
 				$orderJson = new StdClass;
 				$appName = "Customer";
-				require_once 'CallRestApiClass.php';
-				$classObj = new CallRestApiClass();
-				$request = array('title' => $title, 'message' => $body, 'topic' => 'Live', 'token' => $token);
-				$request = json_encode($request);
-				$notiResult = $classObj->callPostApiForSendNotification($appName, $request);
+				require_once 'FirebaseNotificationClass.php';
+				$classObj = new FirebaseNotificationClass();
+				$notiResult = $classObj->sendNotificationNew1($appName, $token, $fcmToken, $title, $body, $image, $link, $orderJson);
 				$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$token','\n') where `OrderId` = $orderId";
 				// echo $notiSql;
 				$notiStmt = $conn->prepare($notiSql);

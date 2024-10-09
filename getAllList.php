@@ -538,6 +538,7 @@ else if($searchType == "rider"){
 			'aadharPic' => $aadharPic,
 			'panNo' => $row["PanNo"],
 			'panPic' => $panPic,
+			'riderLatLong' => $row["CurrentLatlong"],
 			'isActive' => $row["IsActive"]
 		);
 		array_push($riderList, $riderJson);

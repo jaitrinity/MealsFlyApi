@@ -5,7 +5,7 @@ if($methodType != "POST"){
 	return;
 }
 $json = file_get_contents('php://input');
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/restaurantVerifyOTP_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
+file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/restaurantVerifyOTP_1_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
 $jsonData=json_decode($json);
 
 $mobile = $jsonData->mobile;
@@ -68,15 +68,15 @@ if(mysqli_num_rows($query) != 0){
 		$stmt->execute();
 		$deviceQuery = $stmt->get_result();
 		if(mysqli_num_rows($deviceQuery) != 0){
-			$updateDevice = "UPDATE `Device` SET `Token`=?, `Make`=?, `Model`=?, `OS`=?, `OSVer`=?, `AppVer`=?, `UpdateDate`= current_timestamp WHERE `Mobile` = ? and `UserId` = $restId and `AppName` = 2";
+			$updateDevice = "UPDATE `Device` SET `Token`=?, `FcmToken`=?, `Make`=?, `Model`=?, `OS`=?, `OSVer`=?, `AppVer`=?, `UpdateDate`= current_timestamp WHERE `Mobile` = ? and `UserId` = $restId and `AppName` = 2";
 			$stmt = $conn->prepare($updateDevice);
-			$stmt->bind_param("sssssss", $token, $make, $model, $os, $osVer, $appVer, $mobile);
+			$stmt->bind_param("ssssssss", $token->deviceToken, $token->fcmToken, $make, $model, $os, $osVer, $appVer, $mobile);
 			$stmt->execute();
 		}
 		else{
-			$insertDevice = "INSERT INTO `Device`(`Mobile`, `Token`, `Make`, `Model`, `OS`, `OSVer`, `AppVer`, `UserId`, `AppName`) VALUES (?, ?, ?, ?, ?, ?, ?, $restId, 2)";
+			$insertDevice = "INSERT INTO `Device`(`Mobile`, `Token`, `FcmToken`, `Make`, `Model`, `OS`, `OSVer`, `AppVer`, `UserId`, `AppName`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, $restId, 2)";
 			$stmt = $conn->prepare($insertDevice);
-			$stmt->bind_param("sssssss", $mobile, $token, $make, $model, $os, $osVer, $appVer);
+			$stmt->bind_param("ssssssss", $mobile, $token->deviceToken, $token->fcmToken, $make, $model, $os, $osVer, $appVer);
 			$stmt->execute();
 		}
 	}	

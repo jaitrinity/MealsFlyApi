@@ -1,6 +1,6 @@
 <?php
 include("dbConfiguration.php");
-$sql = "SELECT * FROM `ImportItems` where `IsDeleted`=0";
+$sql = "SELECT * FROM `ImportItems` where `RestId`=39 and `IsDeleted`=0";
 $stmt = $conn->prepare($sql);
 $stmt->execute();
 $query = $stmt->get_result();
@@ -8,9 +8,11 @@ $rowCount = mysqli_num_rows($query);
 $successArr = array();
 $failArr = array();
 while($row = mysqli_fetch_assoc($query)){
-	$defaultImg = "https://www.trinityapplab.in/MealsFly/logo/rest3.png";
+	$defaultImg = "https://www.trinityapplab.in/MealsFly/logo/mealsfly.png";
+	$id = $row["Id"];
 	$restId = $row["RestId"];
 	$category = $row["Category"];
+	$category = str_replace("'", "\'", $category);
 
 	$sql2 = "SELECT `CatId` FROM `CategoryMaster` where `RestId`=$restId and `Name`='$category' and `IsActive`=1";
 	$result2 = mysqli_query($conn,$sql2);
@@ -29,6 +31,7 @@ while($row = mysqli_fetch_assoc($query)){
 	}
 
 	$itemName = $row["ItemName"];
+	$itemName = str_replace("'", "\'", $itemName);
 	$unitList = array();
 	$quantity = $row["Quantity"];
 	$unitObj = array('title' => 'Quantity', 'price' => $quantity);
@@ -105,6 +108,10 @@ while($row = mysqli_fetch_assoc($query)){
 			}	
 		}
 		array_push($successArr, $itemName);
+
+		$updSql = "UPDATE `ImportItems` set `IsDeleted`=1 where `Id`=$id";
+		$updStmt = $conn->prepare($updSql);
+		$updStmt->execute();
 	}
 	else{
 		array_push($failArr, $itemName);
@@ -114,11 +121,6 @@ while($row = mysqli_fetch_assoc($query)){
 $code = 0;
 $message = "";
 if(count($successArr) == $rowCount){
-	// $trunSql = "TRUNCATE `ImportItems`";
-	$trunSql = "UPDATE `ImportItems` set `IsDeleted`=1";
-	$trunStmt = $conn->prepare($trunSql);
-	$trunStmt->execute();
-
 	$code = 200;
 	$message =  "Successfully imported";
 }

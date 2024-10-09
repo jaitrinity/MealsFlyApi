@@ -5,7 +5,8 @@ if($methodType != "POST"){
 	return;
 }
 $json = file_get_contents('php://input');
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/log_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
+$logFilePath = '/var/www/trinityapplab.in/html/MealsFly/log/log1_';
+file_put_contents($logFilePath.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$json."\n", FILE_APPEND);
 $jsonData = json_decode($json);
 
 $restId = $jsonData->restId;
@@ -18,7 +19,9 @@ $orRowCount=mysqli_num_rows($orQuery);
 if($orRowCount != 0){
 	return;
 }
-
+$token = $jsonData->token;
+// $deviceToken = $token->deviceToken;
+$fcmToken = $token->fcmToken;
 $custAddId = $jsonData->custAddId;
 $totalPrice = $jsonData->totalPrice;
 $deliveryCharge = $jsonData->deliveryCharge;
@@ -106,7 +109,7 @@ if($message == ""){
 				array_push($tokenList, $row2["Token"]);
 			}
 			$tokens = implode(",", $tokenList);
-			$title = "New Order";
+			$title = "New Order @ ".date("Y-m-d H:i:s");
 			$body = "Thank you for ordering on mealsfly, your food will be delivered soon";
 			$image = "";
 			$link = "";
@@ -114,7 +117,7 @@ if($message == ""){
 			$appName = "Customer";
 			require_once 'FirebaseNotificationClass.php';
 			$classObj = new FirebaseNotificationClass();
-			$notiResult = $classObj->sendNotificationNew($appName, $tokens, $title, $body, $image, $link, $orderJson);
+			$notiResult = $classObj->sendNotificationNew1($appName, $tokens, $fcmToken, $title, $body, $image, $link, $orderJson);
 			$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Customer-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Customer-\n','$tokens','\n') where `OrderId` = $orderId";
 			// echo $notiSql;
 			$notiStmt = $conn->prepare($notiSql);
@@ -174,7 +177,7 @@ if($message == ""){
 					$appName = "Restaurant";
 					require_once 'FirebaseNotificationClass.php';
 					$classObj = new FirebaseNotificationClass();
-					$notiResult = $classObj->sendNotificationNew($appName, $tokens, $title, $body, $image, $link, $orderJson);
+					$notiResult = $classObj->sendNotificationNew1($appName, $tokens, $fcmToken, $title, $body, $image, $link, $orderJson);
 					$notiSql = "UPDATE `MyOrders` set `NotificationResponse`= concat(`NotificationResponse`,'-Restaurant-\n',?,'\n'), `Tokens`=concat(`Tokens`,'-Restaurant-\n','$tokens','\n') where `OrderId` = $orderId";
 					// echo $notiSql;
 					$notiStmt = $conn->prepare($notiSql);
@@ -199,5 +202,5 @@ else{
 $output = array('orderId' => $orderId, 'code' => $code, 'message' => $message);
 echo json_encode($output);
 
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/log_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($output)."\n", FILE_APPEND);
+file_put_contents($logFilePath.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($output)."\n", FILE_APPEND);
 ?>

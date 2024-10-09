@@ -35,6 +35,9 @@ else if($insertType == "addCategoryNew"){
 	$restId = $jsonData->restId;
 	$category = $jsonData->category;
 	$oldCategory = $jsonData->oldCategory;
+	if($oldCategory == ""){
+		$oldCategory = $category;
+	}
 	$imageBase64 = $jsonData->imageBase64;
 	$updateImg = "";
 	if($imageBase64 !=""){
@@ -45,20 +48,28 @@ else if($insertType == "addCategoryNew"){
 		$updateImg .= ", `Image`='$imageBase64'";
 	}
 
-	$sql = "SELECT `CatId` FROM `CategoryMaster` where `RestId`=$restId and `Name`='$oldCategory' and `IsActive`=1";
+	$sql = "SELECT `CatId` FROM `CategoryMaster` where `RestId`=$restId and `Name`=? and `IsActive`=1";
 	$stmt = $conn->prepare($sql);
+	$stmt->bind_param("s", $oldCategory);
 	$stmt->execute();
 	$query = $stmt->get_result();
 	$rowCount = mysqli_num_rows($query);
 	if($rowCount == 0){
+		if($imageBase64 == ""){
+			$imageBase64 = "https://www.trinityapplab.in/MealsFly/logo/mealsfly.png";
+		}
 		$type = "insert";
-		$sql = "INSERT INTO `CategoryMaster`(`RestId`, `Name`, `Image`) VALUES ($restId, '$category', '$imageBase64')";
+		$sql = "INSERT INTO `CategoryMaster`(`RestId`, `Name`, `Image`) VALUES ($restId, ?, '$imageBase64')";
+		$stmt = $conn->prepare($sql);
+		$stmt->bind_param("s", $category);
 	}
 	else{
 		$type = "update";
-		$sql = "UPDATE `CategoryMaster` set `Name`='$category' $updateImg where `RestId`=$restId and `Name`='$oldCategory'";
+		$sql = "UPDATE `CategoryMaster` set `Name`=? $updateImg where `RestId`=$restId and `Name`=?";
+		$stmt = $conn->prepare($sql);
+		$stmt->bind_param("ss", $category, $oldCategory);
 	}
-	$stmt = $conn->prepare($sql);
+	
 	$code = 0;
 	$message = "";
 	if($stmt->execute()){
@@ -79,6 +90,7 @@ else if($insertType == "addRider"){
 	$aadharBase64 = $jsonData->aadharBase64;
 	$panNo = $jsonData->panNo;
 	$panBase64 = $jsonData->panBase64;
+	$latLong = $jsonData->latLong;
 
 	$sql = "SELECT * FROM `DeliveryBoyMaster` where `Mobile` = ? and `IsActive` = 1";
 	$stmt = $conn->prepare($sql);
@@ -98,7 +110,8 @@ else if($insertType == "addRider"){
 		$aadhar = $base64->base64_to_jpeg($aadharBase64,$t.'_Aadhar');
 		$pan = $base64->base64_to_jpeg($panBase64,$t.'_PAN');
 
-		$sql = "INSERT INTO `DeliveryBoyMaster`(`Name`, `Mobile`, `AadharNo`, `AadharCardPic`, `PanNo`, `PanPic`) VALUES ('$name', '$mobile', '$aadharNo', '$aadhar', '$panNo', '$pan')";
+		$latLong = str_replace(" ", "", $latLong);
+		$sql = "INSERT INTO `DeliveryBoyMaster`(`Name`, `Mobile`, `AadharNo`, `AadharCardPic`, `PanNo`, `PanPic`, `CurrentLatlong`) VALUES ('$name', '$mobile', '$aadharNo', '$aadhar', '$panNo', '$pan', '$latLong')";
 		$stmt = $conn->prepare($sql);
 		if($stmt->execute()){
 			$code = 200;
@@ -180,6 +193,7 @@ else if($insertType == "restaurant"){
 	$address = $jsonData->address;
 	$pincode = $jsonData->pincode;
 	$latlong = $jsonData->latlong;
+	$latlong = str_replace(" ", "", $latlong);
 	$image64 = $jsonData->image64;
 	$banner64 = $jsonData->banner64;
 	$openTime = $jsonData->openTime;
@@ -236,9 +250,10 @@ else if($insertType == "importItem"){
 	$successArr = array();
 	$failArr = array();
 	while($row = mysqli_fetch_assoc($query)){
-		$defaultImg = "https://www.trinityapplab.in/MealsFly/logo/rest3.png";
+		$defaultImg = "https://www.trinityapplab.in/MealsFly/logo/mealsfly.png";
 		$restId = $row["RestId"];
 		$category = $row["Category"];
+		$category = str_replace("'", "\'", $category);
 
 		$sql2 = "SELECT `CatId` FROM `CategoryMaster` where `RestId`=$restId and `Name`='$category' and `IsActive`=1";
 		$result2 = mysqli_query($conn,$sql2);
@@ -257,6 +272,7 @@ else if($insertType == "importItem"){
 		}
 
 		$itemName = $row["ItemName"];
+		$itemName = str_replace("'", "\'", $itemName);
 		$unitList = array();
 		$quantity = $row["Quantity"];
 		$unitObj = array('title' => 'Quantity', 'price' => $quantity);

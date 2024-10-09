@@ -1,10 +1,6 @@
 <?php 
 include("dbConfiguration.php");
 $riderId = $_REQUEST["riderId"];
-$json = array('riderId' => $riderId);
-$jsonData=json_encode($json);
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/getNonAcceptOrders_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.$jsonData."\n", FILE_APPEND);
-
 $sql = "SELECT `Latitude`, `Longitude`, `getPartnerToRiderDistance`() as `DistRange` FROM `DeliveryBoyMaster` where `RiderId`=$riderId";
 $result = mysqli_query($conn,$sql);
 $row = mysqli_fetch_assoc($result);
@@ -55,5 +51,5 @@ while($row = mysqli_fetch_assoc($result)){
 	array_push($orderList, $orderJson);
 }
 echo json_encode($orderList);
-file_put_contents('/var/www/trinityapplab.in/html/MealsFly/log/getNonAcceptOrders_'.date("Y-m-d").'.log', date("Y-m-d H:i:s").' '.json_encode($orderList)."\n", FILE_APPEND);
+
 ?>
