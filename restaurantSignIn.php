@@ -9,7 +9,7 @@ $jsonData=json_decode($json);
 
 $mobile = $jsonData->mobile;
 
-$sql = "SELECT * FROM `RestaurantMaster` where `Mobile` = ?";
+$sql = "SELECT * FROM `RestaurantMaster` where `Mobile` = ? and `Enable`=1";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $mobile);
 $stmt->execute();
@@ -52,7 +52,7 @@ else{
 			$msgStatus = $classObj->sendOtp($randomOtp, $mobile, $appName);
 		}
 		if($msgStatus){
-			$sql = "UPDATE `RestaurantMaster` set `OTP` = ?, `IsOTPExpired` = 0 where `Mobile` = ?";
+			$sql = "UPDATE `RestaurantMaster` set `OTP` = ?, `IsOTPExpired` = 0 where `Mobile` = ? and `Enable`=1";
 			$stmt = $conn->prepare($sql);
 			$stmt->bind_param("is", $randomOtp, $mobile);
 			if($stmt->execute()){

@@ -185,11 +185,27 @@ else if($insertType == "moreItem"){
 	echo json_encode($output);
 }
 else if($insertType == "restaurant"){
+
+	$mobile = $jsonData->mobile;
+
+	$sql = "SELECT `RestId` FROM `RestaurantMaster` where `Mobile`=? and `Enable`=1 ";
+	$stmt = $conn->prepare($sql);
+	$stmt->bind_param("s", $mobile);
+	$stmt->execute();
+	$query = $stmt->get_result();
+	$rowCount = mysqli_num_rows($query);
+	if($rowCount != 0){
+		$code = 409;
+		$message = "Restaurant already avaiable on $mobile mobile number.";
+		$output = array('code' => $code, 'message' => $message);
+		echo json_encode($output);
+		return;
+	}
+
 	$t=time();
 	$base64 = new Base64ToAny();
 
 	$name = $jsonData->name;
-	$mobile = $jsonData->mobile;
 	$address = $jsonData->address;
 	$pincode = $jsonData->pincode;
 	$latlong = $jsonData->latlong;
@@ -219,9 +235,45 @@ else if($insertType == "restaurant"){
 	}
 	$output = array('code' => $code, 'message' => $message);
 	echo json_encode($output);
-
-
 }
+// else if($insertType == "restaurant"){
+// 	$t=time();
+// 	$base64 = new Base64ToAny();
+
+// 	$name = $jsonData->name;
+// 	$mobile = $jsonData->mobile;
+// 	$address = $jsonData->address;
+// 	$pincode = $jsonData->pincode;
+// 	$latlong = $jsonData->latlong;
+// 	$latlong = str_replace(" ", "", $latlong);
+// 	$image64 = $jsonData->image64;
+// 	$banner64 = $jsonData->banner64;
+// 	$openTime = $jsonData->openTime;
+// 	$closeTime = $jsonData->closeTime;
+// 	if($image64 != ''){
+// 		$image64 = $base64->base64_to_jpeg($image64,$t.'_Image');
+// 	}
+// 	if($banner64 != ''){
+// 		$banner64 = $base64->base64_to_jpeg($banner64,$t.'_Banner');
+// 	}
+
+// 	$sql = "INSERT INTO `RestaurantMaster`(`Name`, `Mobile`, `Address`, `Pincode`, `Image`, `Banner`, `OpenTime`, `CloseTime`, `LatLong`) VALUES ('$name', '$mobile', '$address', '$pincode', '$image64', '$banner64', '$openTime', '$closeTime', '$latlong')";
+// 	$stmt = $conn->prepare($sql);
+// 	$code = 0;
+// 	$message = "";
+// 	if($stmt->execute()){
+// 		$code = 200;
+// 		$message =  "Successfully insert";
+// 	}
+// 	else{
+// 		$code = 0;
+// 		$message = "Something went wrong";
+// 	}
+// 	$output = array('code' => $code, 'message' => $message);
+// 	echo json_encode($output);
+
+
+// }
 else if($insertType == "importItem"){
 	$restId = $jsonData->restId;
 	$importData = $jsonData->importData;

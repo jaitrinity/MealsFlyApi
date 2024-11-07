@@ -18,7 +18,7 @@ $osVer = $jsonData->osVersion;
 $appVer = $jsonData->appVersion;
 
 
-$sql = "SELECT * FROM `RestaurantMaster` where `Mobile` = ? and `OTP` = ? and `IsOTPExpired` = 0";
+$sql = "SELECT * FROM `RestaurantMaster` where `Mobile` = ? and `OTP` = ? and `IsOTPExpired` = 0 and `Enable`=1";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("si", $mobile, $otp);
 $stmt->execute();
@@ -56,7 +56,7 @@ if(mysqli_num_rows($query) != 0){
 	);
 	echo json_encode($output);
 
-	$sql = "UPDATE `RestaurantMaster` set `IsOTPExpired` = 1 where `Mobile` = ? and `OTP` = ? and `IsOTPExpired` = 0";
+	$sql = "UPDATE `RestaurantMaster` set `IsOTPExpired` = 1 where `Mobile` = ? and `OTP` = ? and `IsOTPExpired` = 0 and `Enable`=1";
 	$stmt = $conn->prepare($sql);
 	$stmt->bind_param("si", $mobile, $otp);
 	$stmt->execute();
