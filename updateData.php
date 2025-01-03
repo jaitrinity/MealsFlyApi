@@ -334,8 +334,9 @@ else if($updateType == "actDeactRider"){
 	echo json_encode($output);
 }
 else if($updateType == "deleteOrder"){
+	$loginUserId = $jsonData->loginUserId;
 	$orderId = $jsonData->orderId;
-	$sql = "UPDATE `MyOrders` set `Status`=7, `DeletedDatetime`=current_timestamp where `OrderId`=$orderId";
+	$sql = "UPDATE `MyOrders` set `Status`=7, `DeletedDatetime`=current_timestamp, `DeleteBy`='$loginUserId' where `OrderId`=$orderId";
 	$stmt = $conn->prepare($sql);
 	$code = 0;
 	$message = "";
@@ -385,12 +386,13 @@ else if($updateType == "updateOrderItem"){
 
 }
 else if($updateType == "deleteOrderItem"){
+	$loginUserId = $jsonData->loginUserId;
 	$orderId = $jsonData->orderId;
 	$deleteItemPrice = $jsonData->deleteItemPrice;
 	$deleteItemArr = $jsonData->deleteItemArr;
 	for($i=0;$i<count($deleteItemArr);$i++){
 		$orderItemId = $deleteItemArr[$i];
-		$updateItemSql = "UPDATE `MyOrderItems` set `IsDeleted`=1 where `OrderItemId`=$orderItemId";
+		$updateItemSql = "UPDATE `MyOrderItems` set `IsDeleted`=1, `DeleteDate`=current_timestamp, `DeleteBy`='$loginUserId' where `OrderItemId`=$orderItemId";
 		$updateItemStmt = $conn->prepare($updateItemSql);
 		$updateItemStmt->execute();
 	}
